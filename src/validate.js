@@ -17,8 +17,8 @@
 *    USA
 */
 
-function hasBreaks(str) { 
-    return /\r|\n/g.test(str); 
+function hasBreaks(str) {
+    return /\r|\n/g.test(str);
 }
 
 function validateHeaderName(name) {
@@ -35,7 +35,7 @@ function validateHeader(header) {
     }
 
     var name = header.substring(0, header.indexOf(":")).trim();
-    var value = header.substring(header.indexOf(":")+1).trim();
+    var value = header.substring(header.indexOf(":") + 1).trim();
     return validateHeaderName(name) && validateHeaderValue(value);
 }
 
@@ -56,7 +56,7 @@ function validateDomain(domain, useWildCards) {
     if (/[()<>\[\]:;@\ ]/gm.test(domain)) {
         return false;
     }
-    
+
     if (useWildCards) {
         return /^[0-9a-zA-Z.?\-*#]+\.[0-9a-zA-Z.?\-*#]+$/g.test(domain);
     }
@@ -78,17 +78,17 @@ function validateIPAddress(ip, useWildCards) {
         if (ipv6) {
             if (nIndex !== -1) {
                 if ((nIndex = ip.indexOf(":")) === -1) {
-                return false;
+                    return false;
                 }
 
                 nIndex = ip.indexOf(":", nIndex + 1);
                 if (nIndex === -1) {
-                return false;
+                    return false;
                 }
 
                 nIndex = ip.indexOf(":", nIndex + 1);
                 if (nIndex === -1) {
-                return false;
+                    return false;
                 }
                 return true;
             }
@@ -96,27 +96,27 @@ function validateIPAddress(ip, useWildCards) {
         else {
             if (nIndex !== -1) {
                 if ((nIndex = ip.indexOf(".")) === -1) {
-                return false;
+                    return false;
                 }
 
                 nIndex = ip.indexOf(".", nIndex + 1);
                 if (nIndex === -1) {
-                return false;
+                    return false;
                 }
 
                 nIndex = ip.indexOf(".", nIndex + 1);
                 if (nIndex === -1) {
-                return false;
+                    return false;
                 }
                 return true;
             }
 
             if (((nIndex = ip.indexOf("/")) !== -1) && (nIndex = ip.indexOf('.')) === -1) {
                 if ((nIndex = ip.indexOf(":")) === -1) {
-                return false;
+                    return false;
                 }
                 if ((nIndex = ip.indexOf(":", nIndex)) === -1) {
-                return false;
+                    return false;
                 }
                 return true;
             }
@@ -142,19 +142,19 @@ function validateInt(value) {
     return re.test(value);
 }
 
-function hasUpperCase (str) {
+function hasUpperCase(str) {
     return /[A-Z]+/.test(str);
 }
 
-function hasLowerCase (str) {
+function hasLowerCase(str) {
     return /[a-z]+/.test(str);
 }
 
-function hasNumber (str) {
+function hasNumber(str) {
     return /[0-9]+/.test(str);
 }
 
-function hasSpecial (str) {
+function hasSpecial(str) {
     return /[!-/]+|[:-@]+|[\[-`]+|[{-~]/.test(str);
 }
 
@@ -175,3 +175,5 @@ const validate = {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = validate;
 }
+
+export default validate;
