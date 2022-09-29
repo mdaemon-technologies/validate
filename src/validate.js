@@ -41,7 +41,7 @@ function validateHeader(header) {
 
 function validateEmailAddress(email, useWildCards) {
     if (useWildCards && (email.indexOf("*") !== -1 || email.indexOf("?") !== -1)) {
-        return email.length > 2;
+        return /[\S]+@[\S]+/.test(sAddr);
     }
 
     var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\"[^\"\\]+\"))@((\[(25[0-5]|2[0-4]\d|[0-1]?\d?\d)(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
