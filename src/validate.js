@@ -142,6 +142,21 @@ function validateInt(value) {
     return re.test(value);
 }
 
+function validateWindowsFileName(str) {
+    var re = /[~"#%&*:<>?\/\\{|}]+/;
+    return typeof str === "string" && str.trim() && !re.test(str);
+}
+
+function validateWindowsPath(str, useWildCards) {
+    var re = useWildCards ? /^(\S{1}:\\|\\\\)([^~"#%&:<>?\/\\{|}]+\\?)+([^~"#%&:<>?\/\\{|}]+)/ : /^(\S{1}:\\|\\\\)([^*~"#%&:<>?\/\\{|}]+\\?)+([^*~"#%&:<>?\/\\{|}]+)/;
+    return typeof str === "string" && str.trim() && !hasBreaks(str) && re.test(str);
+}
+
+function validateLdapDN(str) {
+    var re = /^((CN=([^,]*)),)?((((?:CN|OU)=[^,]+,?)+),)?((DC=[^,]+,?)+)$/i;
+    return typeof str === "string" && str.trim() && re.test(str);
+}
+
 function hasUpperCase(str) {
     return /[A-Z]+/.test(str);
 }
@@ -168,8 +183,11 @@ const validate = {
     header: validateHeader,
     headerName: validateHeaderName,
     headerValue: validateHeaderValue,
+    ldapDN: validateLdapDN,
     ip: validateIPAddress,
-    isInt: validateInt
+    isInt: validateInt,
+    windowsFileName: validateWindowsFileName,
+    windowsPath: validateWindowsPath
 };
 
 if (typeof module !== 'undefined' && module.exports) {
