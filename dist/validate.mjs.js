@@ -190,4 +190,4 @@ const validate = {
     windowsPath: validateWindowsPath
 };
 
-export default validate;
+export { validate as default };

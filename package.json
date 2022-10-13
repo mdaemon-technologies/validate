@@ -1,0 +1,32 @@
+{
+  "name": "validate",
+  "version": "1.0.0",
+  "description": "A validation library used by MDaemon Remote Administration",
+  "main": "dist/validate.cjs.js",
+  "module": "dist/validate.mjs.js",
+  "browser": "dist/validate.umd.js",
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mdaemon-technologies/validate.git"
+  },
+  "keywords": [],
+  "author": "MDaemon Technologies, Ltd.",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mdaemon-technologies/validate/issues"
+  },
+  "homepage": "https://github.com/mdaemon-technologies/validate#readme",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^23.0.0",
+    "rollup": "^2.68.0",
+    "rollup-plugin-terser": "^7.0.2"
+  },
+  "files": [
+    "dist"
+  ]
+}

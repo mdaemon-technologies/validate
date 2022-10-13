@@ -1,3 +1,5 @@
+'use strict';
+
 /*
 *    Copyright (C) 1998-2022  MDaemon Technologies, Ltd.
 *
@@ -190,4 +192,4 @@ const validate = {
     windowsPath: validateWindowsPath
 };
 
-export default validate;
+module.exports = validate;
