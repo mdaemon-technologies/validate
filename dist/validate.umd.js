@@ -40,8 +40,8 @@
             return false;
         }
 
-        var name = header.substring(0, header.indexOf(":")).trim();
-        var value = header.substring(header.indexOf(":") + 1).trim();
+        const name = header.substring(0, header.indexOf(":")).trim();
+        const value = header.substring(header.indexOf(":") + 1).trim();
         return validateHeaderName(name) && validateHeaderValue(value);
     }
 
@@ -50,7 +50,7 @@
             return /[\S]+@[\S]+/.test(sAddr);
         }
 
-        var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\"[^\"\\]+\"))@((\[(25[0-5]|2[0-4]\d|[0-1]?\d?\d)(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\"[^\"\\]+\"))@((\[(25[0-5]|2[0-4]\d|[0-1]?\d?\d)(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
         return re.test(email.trim());
     }
 
@@ -71,66 +71,69 @@
     }
 
     function validateIPAddress(ip, useWildCards) {
-        var ipv6 = ip.indexOf(".") === -1 && ip.indexOf(":") !== -1;
+        const ipv6 = ip.indexOf('.') === -1 && ip.indexOf(':') !== -1;
         if (useWildCards) {
-            var nIndex = ip.indexOf("*");
+            let nIndex = ip.indexOf('*');
             if (nIndex === -1) {
-                nIndex = ip.indexOf("#");
+                nIndex = ip.indexOf('#');
             }
             if (nIndex === -1) {
-                nIndex = ip.indexOf("?");
+                nIndex = ip.indexOf('?');
             }
 
             if (ipv6) {
                 if (nIndex !== -1) {
-                    if ((nIndex = ip.indexOf(":")) === -1) {
-                        return false;
-                    }
-
-                    nIndex = ip.indexOf(":", nIndex + 1);
+                    nIndex = ip.indexOf(':');
                     if (nIndex === -1) {
                         return false;
                     }
 
-                    nIndex = ip.indexOf(":", nIndex + 1);
-                    if (nIndex === -1) {
-                        return false;
-                    }
-                    return true;
-                }
-            }
-            else {
-                if (nIndex !== -1) {
-                    if ((nIndex = ip.indexOf(".")) === -1) {
-                        return false;
-                    }
-
-                    nIndex = ip.indexOf(".", nIndex + 1);
+                    nIndex = ip.indexOf(':', nIndex + 1);
                     if (nIndex === -1) {
                         return false;
                     }
 
-                    nIndex = ip.indexOf(".", nIndex + 1);
+                    nIndex = ip.indexOf(':', nIndex + 1);
                     if (nIndex === -1) {
                         return false;
                     }
                     return true;
                 }
-
-                if (((nIndex = ip.indexOf("/")) !== -1) && (nIndex = ip.indexOf('.')) === -1) {
-                    if ((nIndex = ip.indexOf(":")) === -1) {
-                        return false;
-                    }
-                    if ((nIndex = ip.indexOf(":", nIndex)) === -1) {
-                        return false;
-                    }
-                    return true;
+            } else {
+            if (nIndex !== -1) {
+                nIndex = ip.indexOf('.');
+                if (nIndex === -1) {
+                    return false;
                 }
+
+                nIndex = ip.indexOf('.', nIndex + 1);
+                if (nIndex === -1) {
+                    return false;
+                }
+
+                nIndex = ip.indexOf('.', nIndex + 1);
+                if (nIndex === -1) {
+                    return false;
+                }
+                return true;
             }
 
+            nIndex = ip.indexOf('/');
+            if (nIndex !== -1 && ip.indexOf('.') === -1) {
+                nIndex = ip.indexOf(':');
+                if (nIndex === -1) {
+                    return false;
+                }
+                nIndex = ip.indexOf(':', nIndex);
+                if (nIndex === -1) {
+                    return false;
+                }
+                return true;
+            }
+            }
         }
 
-        var re = /\d/;
+        let re = /\d/;
         if (!re.test(ip)) {
             return false;
         }
@@ -144,23 +147,23 @@
             return false;
         }
 
-        var re = /^\d*$/;
+        const re = /^\d*$/;
         return re.test(value);
     }
 
     function validateWindowsFileName(str) {
-        var re = /[~"#%&*:<>?\/\\{|}]+/;
-        return typeof str === "string" && str.trim() && !re.test(str);
+        const re = /[~"#%&*:<>?\/\\{|}]+/;
+        return typeof str === "string" && str.trim() && !hasBreaks(str) && !re.test(str);
     }
 
     function validateWindowsPath(str, useWildCards) {
-        var re = useWildCards ? /^(\S{1}:\\|\\\\)([^~"#%&:<>?\/\\{|}]+\\?)+([^~"#%&:<>?\/\\{|}]+)/ : /^(\S{1}:\\|\\\\)([^*~"#%&:<>?\/\\{|}]+\\?)+([^*~"#%&:<>?\/\\{|}]+)/;
+        const re = useWildCards ? /^(\S{1}:\\|\\\\)([^~"#%&:<>?\/\\{|}]+\\?)+([^~"#%&:<>?\/\\{|}]+)/ : /^(\S{1}:\\|\\\\)([^*~"#%&:<>?\/\\{|}]+\\?)+([^*~"#%&:<>?\/\\{|}]+)/;
         return typeof str === "string" && str.trim() && !hasBreaks(str) && re.test(str);
     }
 
     function validateLdapDN(str) {
-        var re = /^((CN=([^,]*)),)?((((?:CN|OU)=[^,]+,?)+),)?((DC=[^,]+,?)+)$/i;
-        return typeof str === "string" && str.trim() && re.test(str);
+        const re = /^((CN=([^,]*)),)?((((?:CN|OU)=[^,]+,?)+),)?((DC=[^,]+,?)+)$/i;
+        return typeof str === "string" && str.trim() && !hasBreaks(str) && re.test(str);
     }
 
     function hasUpperCase(str) {
@@ -176,7 +179,17 @@
     }
 
     function hasSpecial(str) {
-        return /[!-/]+|[:-@]+|[\[-`]+|[{-~]/.test(str);
+        return /[!-/]+|[:-@]+|[[-`]+|[{-~]/.test(str);
+    }
+
+    function validatePassword(str, bRequireSpecial) {
+        return {
+            special: bRequireSpecial ? hasSpecial(str) : true,
+            lower: hasLowerCase(str),
+            upper: hasUpperCase(str),
+            number: hasNumber(str),
+            length: str.length
+        }
     }
 
     const validate = {
@@ -192,6 +205,7 @@
         ldapDN: validateLdapDN,
         ip: validateIPAddress,
         isInt: validateInt,
+        password: validatePassword,
         windowsFileName: validateWindowsFileName,
         windowsPath: validateWindowsPath
     };
