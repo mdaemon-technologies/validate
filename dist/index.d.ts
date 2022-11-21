@@ -23,23 +23,23 @@ export function hasSpecial(str: string): boolean;
 export function validatePassword(str: string, bRequireSpecial: boolean): MDaemonValidPassword;
 
 export interface MDaemonValidate {
-    domain: function(string, boolean?): boolean;
-    email: function(string, boolean?): boolean;
-    hasLowerCase: function(string): boolean;
-    hasNumber: function(string): boolean;
-    hasSpecial: function(string): boolean;
-    hasUpperCase: function(string): boolean;
-    header: function(string, string): boolean;
-    headerName: function(string): boolean;
-    headerValue: function(string): boolean;
-    ldapDN: function(string): boolean;
-    ip: function(string, boolean?): boolean;
-    isInt: function(string): boolean;
-    password: function(string): MDaemonValidPassword,
-    windowsFileName: function(string): boolean;
-    windowsPath: function(string, boolean?): boolean;
+    domain: (domain: string, useWildCards: boolean | null) => boolean;
+    email: (email: string, useWildCards: boolean | null) => boolean;
+    hasLowerCase: (name: string) => boolean;
+    hasNumber: (str: string) => boolean;
+    hasSpecial: (str: string) => boolean;
+    hasUpperCase: (str: string) => boolean;
+    header: (header: string) => boolean;
+    headerName: (name: string) => boolean;
+    headerValue: (value: string) => boolean;
+    ldapDN: (str: string) => boolean;
+    ip: (ip: string, useWildCards: boolean | null) => boolean;
+    isInt: (value: string) => boolean;
+    password: (str: string, bRequireSpecial: boolean ) => MDaemonValidPassword,
+    windowsFileName: (str: string) => boolean;
+    windowsPath: (str: string, useWildCards: boolean | null) => boolean;
 }
 
 declare namespace validate {
     type ProtoType = MDaemonValidate;
-};
+}
