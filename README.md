@@ -12,7 +12,7 @@ The "validate" utility provides several validation methods, from domains to ipv6
     const validate = require("@mdaemon/validate");
 ```
 
-# Node Modules#
+# Node Modules #
 
 ```javascript
     import validate from "@mdaemon/validate";  
