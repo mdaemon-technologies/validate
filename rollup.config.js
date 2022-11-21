@@ -17,7 +17,7 @@ export default [
 	{
 		input: 'src/validate.js',
 		output: [
-			{ file: pkg.main, format: 'cjs' },
+			{ file: pkg.main, format: 'cjs', exports: 'default' },
 			{ file: pkg.module, format: 'es' }
 		]
 	}

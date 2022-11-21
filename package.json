@@ -1,6 +1,6 @@
 {
   "name": "@mdaemon/validate",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A validation library used by MDaemon Remote Administration",
   "main": "dist/validate.cjs.js",
   "module": "dist/validate.mjs.js",
@@ -17,9 +17,8 @@
     "type": "git",
     "url": "git+https://github.com/mdaemon-technologies/validate.git"
   },
-  "keywords": [],
   "author": "MDaemon Technologies, Ltd.",
-  "license": "GLGPLv2.1",
+  "license": "LGPL-2.1",
   "bugs": {
     "url": "https://github.com/mdaemon-technologies/validate/issues"
   },
@@ -31,5 +30,6 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "keywords": ["validation", "domains", "passwords", "ldap", "headers", "email", "ipv4", "ipv6", "windows files", "windows paths"]
 }

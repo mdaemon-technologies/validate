@@ -24,7 +24,7 @@ function hasBreaks(str) {
 }
 
 function validateHeaderName(name) {
-    return typeof name === "string" && name.length && !hasBreaks(name) && /^[A-Za-z\-]+$/g.test(name);
+    return typeof name === "string" && name.length && !hasBreaks(name) && /^[A-Za-z\-]+$/g.test(name) && !/(^-)|(-$)/.test(name);
 }
 
 function validateHeaderValue(value) {
@@ -96,36 +96,36 @@ function validateIPAddress(ip, useWildCards) {
                 return true;
             }
         } else {
-        if (nIndex !== -1) {
-            nIndex = ip.indexOf('.');
-            if (nIndex === -1) {
-                return false;
+            if (nIndex !== -1) {
+                nIndex = ip.indexOf('.');
+                if (nIndex === -1) {
+                    return false;
+                }
+
+                nIndex = ip.indexOf('.', nIndex + 1);
+                if (nIndex === -1) {
+                    return false;
+                }
+
+                nIndex = ip.indexOf('.', nIndex + 1);
+                if (nIndex === -1) {
+                    return false;
+                }
+                return true;
             }
 
-            nIndex = ip.indexOf('.', nIndex + 1);
-            if (nIndex === -1) {
-                return false;
+            nIndex = ip.indexOf('/');
+            if (nIndex !== -1 && ip.indexOf('.') === -1) {
+                nIndex = ip.indexOf(':');
+                if (nIndex === -1) {
+                    return false;
+                }
+                nIndex = ip.indexOf(':', nIndex);
+                if (nIndex === -1) {
+                    return false;
+                }
+                return true;
             }
-
-            nIndex = ip.indexOf('.', nIndex + 1);
-            if (nIndex === -1) {
-                return false;
-            }
-            return true;
-        }
-
-        nIndex = ip.indexOf('/');
-        if (nIndex !== -1 && ip.indexOf('.') === -1) {
-            nIndex = ip.indexOf(':');
-            if (nIndex === -1) {
-                return false;
-            }
-            nIndex = ip.indexOf(':', nIndex);
-            if (nIndex === -1) {
-                return false;
-            }
-            return true;
-        }
         }
     }
 
