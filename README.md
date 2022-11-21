@@ -127,10 +127,10 @@ The "validate" utility provides several validation methods, from domains to ipv6
     validHeaderValue = validate.headerValue("default-src 'self' \n");
     console.log(validHeaderValue); // false
 
-    let validHeader = validate.header("Content-Security-Policy", "default-src 'self'");
+    let validHeader = validate.header("Content-Security-Policy: default-src 'self'");
     console.log(validHeader); // true
 
-    validHeader = validate.header("X-Frame-Options", "1\n");
+    validHeader = validate.header("X-Frame-Options");
     console.log(validHeader); // false
 ```
 

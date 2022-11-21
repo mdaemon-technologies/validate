@@ -21,15 +21,15 @@ function hasBreaks(str) {
     return /\r|\n/g.test(str);
 }
 
-function validateHeaderName(name) {
+export function validateHeaderName(name) {
     return typeof name === "string" && name.length && !hasBreaks(name) && /^[A-Za-z\-]+$/g.test(name) && !/(^-)|(-$)/.test(name);
 }
 
-function validateHeaderValue(value) {
+export function validateHeaderValue(value) {
     return typeof value === "string" && value.length && !hasBreaks(value);
 }
 
-function validateHeader(header) {
+export function validateHeader(header) {
     if (typeof header !== "string" || header.indexOf(":") === -1) {
         return false;
     }
@@ -39,7 +39,7 @@ function validateHeader(header) {
     return validateHeaderName(name) && validateHeaderValue(value);
 }
 
-function validateEmailAddress(email, useWildCards) {
+export function validateEmailAddress(email, useWildCards) {
     if (useWildCards && (email.indexOf("*") !== -1 || email.indexOf("?") !== -1)) {
         return /[\S]+@[\S]+/.test(sAddr);
     }
@@ -48,7 +48,7 @@ function validateEmailAddress(email, useWildCards) {
     return re.test(email.trim());
 }
 
-function validateDomain(domain, useWildCards) {
+export function validateDomain(domain, useWildCards) {
     if (hasBreaks(domain)) {
         return false;
     }
@@ -64,7 +64,7 @@ function validateDomain(domain, useWildCards) {
     return /^[0-9a-zA-Z.\-]+\.[0-9a-zA-Z.\-]+$/g.test(domain);
 }
 
-function validateIPAddress(ip, useWildCards) {
+export function validateIPAddress(ip, useWildCards) {
     const ipv6 = ip.indexOf('.') === -1 && ip.indexOf(':') !== -1;
     if (useWildCards) {
         let nIndex = ip.indexOf('*');
@@ -136,7 +136,7 @@ function validateIPAddress(ip, useWildCards) {
     return re.test(ip);
 }
 
-function validateInt(value) {
+export function validateInt(value) {
     if (value.length < 1) {
         return false;
     }
@@ -145,38 +145,38 @@ function validateInt(value) {
     return re.test(value);
 }
 
-function validateWindowsFileName(str) {
+export function validateWindowsFileName(str) {
     const re = /[~"#%&*:<>?\/\\{|}]+/;
     return typeof str === "string" && str.trim() && !hasBreaks(str) && !re.test(str);
 }
 
-function validateWindowsPath(str, useWildCards) {
+export function validateWindowsPath(str, useWildCards) {
     const re = useWildCards ? /^(\S{1}:\\|\\\\)([^~"#%&:<>?\/\\{|}]+\\?)+([^~"#%&:<>?\/\\{|}]+)/ : /^(\S{1}:\\|\\\\)([^*~"#%&:<>?\/\\{|}]+\\?)+([^*~"#%&:<>?\/\\{|}]+)/;
     return typeof str === "string" && str.trim() && !hasBreaks(str) && re.test(str);
 }
 
-function validateLdapDN(str) {
+export function validateLdapDN(str) {
     const re = /^((CN=([^,]*)),)?((((?:CN|OU)=[^,]+,?)+),)?((DC=[^,]+,?)+)$/i;
     return typeof str === "string" && str.trim() && !hasBreaks(str) && re.test(str);
 }
 
-function hasUpperCase(str) {
+export function hasUpperCase(str) {
     return /[A-Z]+/.test(str);
 }
 
-function hasLowerCase(str) {
+export function hasLowerCase(str) {
     return /[a-z]+/.test(str);
 }
 
-function hasNumber(str) {
+export function hasNumber(str) {
     return /[0-9]+/.test(str);
 }
 
-function hasSpecial(str) {
+export function hasSpecial(str) {
     return /[!-/]+|[:-@]+|[[-`]+|[{-~]/.test(str);
 }
 
-function validatePassword(str, bRequireSpecial) {
+export function validatePassword(str, bRequireSpecial) {
     return {
         special: bRequireSpecial ? hasSpecial(str) : true,
         lower: hasLowerCase(str),
