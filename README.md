@@ -40,7 +40,7 @@ The "validate" utility provides several validation methods, from domains to ipv6
 ### Validate email address syntax ###
 
 ```javascript
-	let validEmail = validate.email("tommy@mdaemon.com");
+    let validEmail = validate.email("tommy@mdaemon.com");
     console.log(validEmail); // true
 
     validEmail = validate.email("tommy.com");
