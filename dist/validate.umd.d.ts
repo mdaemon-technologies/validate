@@ -1,0 +1,1 @@
+declare module '@mdaemon/validate/dist/validate.umd.js';

@@ -32,7 +32,7 @@ export default [
 			}
 		],
 		plugins: [ 
-			terser()
+			//terser()
 		]
 	}
 ]
