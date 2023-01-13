@@ -9,13 +9,13 @@ The "validate" utility provides several validation methods, from domains to ipv6
 
 # Node CommonJS #
 ```javascript
-    const validate = require("@mdaemon/validate");
+    const validate = require("@mdaemon/validate/dist/validate.cjs");
 ```
 
 # Node Modules #
 
 ```javascript
-    import validate from "@mdaemon/validate";  
+    import validate from "@mdaemon/validate/dist/validate.mjs";  
 ```
 
 # Web #
