@@ -146,17 +146,17 @@ export function validateInt(value) {
 }
 
 export function validateWindowsFileName(str) {
-    const re = /[~"#%&*:<>?\/\\{|}]+/;
+    const re = /["*:<>?\/\\|]+/;
     return typeof str === "string" && str.trim() && !hasBreaks(str) && !re.test(str);
 }
 
 export function validateWindowsPath(str, useWildCards) {
-    const re = useWildCards ? /^(\S{1}:\\|\\\\)([^~"#%&:<>?\/\\{|}]+\\?)+([^~"#%&:<>?\/\\{|}]+)/ : /^(\S{1}:\\|\\\\)([^*~"#%&:<>?\/\\{|}]+\\?)+([^*~"#%&:<>?\/\\{|}]+)/;
+    const re = useWildCards ? /^([A-Za-z]{1}:\\|\\\\)([^":<>\/\\|]+\\?)+([^":<>\/\\|]+)$/ : /^([A-Za-z]{1}:\\|\\\\)([^"*:<>?\/\\|]+\\?)+([^"*:<>?\/\\|]+)$/;
     return typeof str === "string" && str.trim() && !hasBreaks(str) && re.test(str);
 }
 
 export function validateLdapDN(str) {
-    const re = /^((CN=([^,]*)),)?((((?:CN|OU)=[^,]+,?)+),)?((DC=[^,]+,?)+)$/i;
+    const re = /^(((CN|2\.5\.4\.3|UID|0\.9\.2342\.19200300\.100\.1\.1) *= *([^,]*)))?( *,? *(((?:CN|2\.5\.4\.3|OU|2\.5\.4\.11) *= *[^,]+,?)+))?( *,? *((DC|0\.9\.2342\.19200300\.100\.1\.25) *= *[^,]+)+)*$/i;
     return typeof str === "string" && str.trim() && !hasBreaks(str) && re.test(str);
 }
 
