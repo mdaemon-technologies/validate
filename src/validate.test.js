@@ -257,6 +257,7 @@ describe("validate has method ip", () => {
     expect(validate.ip("1.1.1.1")).toBe(true);
     expect(validate.ip("1.1.1.1/16")).toBe(true);
     expect(validate.ip("fe80::500b:59e9:351:fbf3")).toBe(true);
+    expect(validate.ip("fe80::500b:59e9:351:fbf3/29")).toBe(true);
   });
 
   describe("validateIPAddress is an alias for validate.ip", () => {
