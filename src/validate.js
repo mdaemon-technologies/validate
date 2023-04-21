@@ -1,5 +1,5 @@
 /*
-*    Copyright (C) 1998-2022  MDaemon Technologies, Ltd.
+*    Copyright (C) 1998-2023  MDaemon Technologies, Ltd.
 *
 *    This library is free software; you can redistribute it and/or
 *    modify it under the terms of the GNU Lesser General Public
@@ -18,15 +18,19 @@
 */
 
 function hasBreaks(str) {
-    return /\r|\n/g.test(str);
+    return typeof str === "string" && /\u000d|\u000a/g.test(str);
+}
+
+export function hasControlCharacters(str) {
+    return (typeof str === "string" && /\u0008|\u000c|\u0009|\u000b/g.test(str)) || hasBreaks(str);
 }
 
 export function validateHeaderName(name) {
-    return typeof name === "string" && name.length && !hasBreaks(name) && /^[A-Za-z\-]+$/g.test(name) && !/(^-)|(-$)/.test(name);
+    return typeof name === "string" && name.length && !hasControlCharacters(name) && /^[A-Za-z\-]+$/g.test(name) && !/(^-)|(-$)/.test(name);
 }
 
 export function validateHeaderValue(value) {
-    return typeof value === "string" && value.length && !hasBreaks(value);
+    return typeof value === "string" && value.length && !hasControlCharacters(value);
 }
 
 export function validateHeader(header) {
@@ -40,6 +44,10 @@ export function validateHeader(header) {
 }
 
 export function validateEmailAddress(email, useWildCards) {
+    if (typeof email !== "string") {
+      return false;
+    }
+
     if (useWildCards && (email.indexOf("*") !== -1 || email.indexOf("?") !== -1)) {
         return /[\S]+@[\S]+/.test(sAddr);
     }
@@ -49,7 +57,11 @@ export function validateEmailAddress(email, useWildCards) {
 }
 
 export function validateDomain(domain, useWildCards) {
-    if (hasBreaks(domain)) {
+    if (typeof domain !== "string") {
+      return false;
+    }
+
+    if (hasControlCharacters(domain)) {
         return false;
     }
 
@@ -65,6 +77,9 @@ export function validateDomain(domain, useWildCards) {
 }
 
 export function validateIPAddress(ip, useWildCards) {
+    if (typeof ip !== "string") {
+      return false;
+    }
     const ipv6 = ip.indexOf('.') === -1 && ip.indexOf(':') !== -1;
     if (useWildCards) {
         let nIndex = ip.indexOf('*');
@@ -141,42 +156,63 @@ export function validateIPAddress(ip, useWildCards) {
 }
 
 export function validateInt(value) {
-    if (value.length < 1) {
+    if (typeof value !== "string" || value.length < 1) {
         return false;
     }
 
-    const re = /^\d*$/;
-    return re.test(value);
+    return /^\d*$/.test(value);
 }
 
 export function validateWindowsFileName(str) {
+    if (typeof str !== "string") {
+      return false;
+    }
+
     const re = /["*:<>?\/\\|]+/;
     return typeof str === "string" && str.trim() && !hasBreaks(str) && !re.test(str);
 }
 
 export function validateWindowsPath(str, useWildCards) {
+    if (typeof str !== "string") {
+      return false;
+    }
     const re = useWildCards ? /^([A-Za-z]{1}:\\|\\\\)([^":<>\/\\|]+\\?)+([^":<>\/\\|]+)$/ : /^([A-Za-z]{1}:\\|\\\\)([^"*:<>?\/\\|]+\\?)+([^"*:<>?\/\\|]+)$/;
     return typeof str === "string" && str.trim() && !hasBreaks(str) && re.test(str);
 }
 
 export function validateLdapDN(str) {
+    if (typeof str !== "string") {
+      return false;
+    }
     const re = /^(((CN|2\.5\.4\.3|UID|0\.9\.2342\.19200300\.100\.1\.1) *= *([^,]*)))?( *,? *(((?:CN|2\.5\.4\.3|OU|2\.5\.4\.11) *= *[^,]+,?)+))?( *,? *((DC|0\.9\.2342\.19200300\.100\.1\.25) *= *[^,]+)+)*$/i;
     return typeof str === "string" && str.trim() && !hasBreaks(str) && re.test(str);
 }
 
 export function hasUpperCase(str) {
+    if (typeof str !== "string") {
+      return false;
+    }
     return /[A-Z]+/.test(str);
 }
 
 export function hasLowerCase(str) {
+    if (typeof str !== "string") {
+      return false;
+    }
     return /[a-z]+/.test(str);
 }
 
 export function hasNumber(str) {
+    if (typeof str !== "string") {
+      return false;
+    }
     return /[0-9]+/.test(str);
 }
 
 export function hasSpecial(str) {
+    if (typeof str !== "string") {
+      return false;
+    }
     return /[!-/]+|[:-@]+|[[-`]+|[{-~]/.test(str);
 }
 
@@ -193,6 +229,7 @@ export function validatePassword(str, bRequireSpecial) {
 const validate = {
     domain: validateDomain,
     email: validateEmailAddress,
+    hasControlCharacters: hasControlCharacters,
     hasLowerCase: hasLowerCase,
     hasNumber: hasNumber,
     hasSpecial: hasSpecial,

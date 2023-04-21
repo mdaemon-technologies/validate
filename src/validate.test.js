@@ -2,6 +2,7 @@ const v = require("../dist/validate.cjs");
 const { 
   validateDomain, 
   validateEmailAddress, 
+  hasControlCharacters,
   hasLowerCase, 
   hasNumber, 
   hasSpecial,
@@ -378,5 +379,31 @@ describe("validate has method windowsPath", () => {
   describe("validateWindowsPath is an alias for validate.windowsPath", () => {
     expect(typeof validateWindowsPath).toBe("function");
     expect(validateWindowsPath).toBe(validate.windowsPath);
+  });
+});
+
+describe("validate has method hasControlCharacters", () => {
+  it("is a function", () => {
+    expect(typeof validate.hasControlCharacters).toBe("function");
+  });
+
+  it("confirms a string has control characters", () => {
+    expect(validate.hasControlCharacters("\t")).toBe(true);
+    expect(validate.hasControlCharacters("\b")).toBe(true);
+    expect(validate.hasControlCharacters("\f")).toBe(true);
+    expect(validate.hasControlCharacters("\n")).toBe(true);
+    expect(validate.hasControlCharacters("\r")).toBe(true);
+    expect(validate.hasControlCharacters("\v")).toBe(true);
+    expect(validate.hasControlCharacters("\u0009")).toBe(true);
+    expect(validate.hasControlCharacters("\u0008")).toBe(true);
+    expect(validate.hasControlCharacters("\u000c")).toBe(true);
+    expect(validate.hasControlCharacters("\u000a")).toBe(true);
+    expect(validate.hasControlCharacters("\u000d")).toBe(true);
+    expect(validate.hasControlCharacters("\u000b")).toBe(true);
+  });
+
+  describe("hasControlCharacters is an alias for validate.hasControlCharacters", () => {
+    expect(typeof hasControlCharacters).toBe("function");
+    expect(hasControlCharacters).toBe(validate.hasControlCharacters);
   });
 });
