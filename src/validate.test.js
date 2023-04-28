@@ -14,6 +14,7 @@ const {
   validateIPAddress,
   validateInt,
   validatePassword,
+  validatePhoneNumber,
   validateWindowsFileName,
   validateWindowsPath
 } = v;
@@ -335,6 +336,26 @@ describe("validate has method password", () => {
   describe("validatePassword is an alias for validate.password", () => {
     expect(typeof validatePassword).toBe("function");
     expect(validatePassword).toBe(validate.password);
+  });
+});
+
+describe("validate has method phoneNumber", () => {
+  it("is a function", () => {
+    expect(typeof validate.phoneNumber).toBe("function");
+  });
+
+  it("validates a phone number", () => {
+    expect(validate.phoneNumber("+18325267777")).toBe(true);
+    expect(validate.phoneNumber("1 (832) 526-7777")).toBe(true);
+    expect(validate.phoneNumber("+1-832-526-7777")).toBe(true);
+    expect(validate.phoneNumber("+12 (832) 526-7777")).toBe(true);
+    expect(validate.phoneNumber("+13 832 526 7777")).toBe(true);
+    expect(validate.phoneNumber("+14 832-526-7777")).toBe(true);
+  });
+
+  describe("validatePhoneNumber is an alias for validate.phoneNumber", () => {
+    expect(typeof validatePhoneNumber).toBe("function");
+    expect(validatePhoneNumber).toBe(validate.phoneNumber);
   });
 });
 

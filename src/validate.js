@@ -188,6 +188,10 @@ export function validateLdapDN(str) {
     return typeof str === "string" && str.trim() && !hasBreaks(str) && re.test(str);
 }
 
+export function validatePhoneNumber(str) {
+  return typeof str === "string" && /^\+?[0-9)( -]{5,20}$/.test(str);
+}
+
 export function hasUpperCase(str) {
     if (typeof str !== "string") {
       return false;
@@ -237,10 +241,11 @@ const validate = {
     header: validateHeader,
     headerName: validateHeaderName,
     headerValue: validateHeaderValue,
+    isInt: validateInt,
     ldapDN: validateLdapDN,
     ip: validateIPAddress,
-    isInt: validateInt,
     password: validatePassword,
+    phoneNumber: validatePhoneNumber,
     windowsFileName: validateWindowsFileName,
     windowsPath: validateWindowsPath
 };
