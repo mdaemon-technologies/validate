@@ -7,6 +7,9 @@ const {
   hasNumber, 
   hasSpecial,
   hasUpperCase,
+  isValidPassword,
+  resetPasswordRequirements,
+  setPasswordRequirements,
   validateHeader,
   validateHeaderName,
   validateHeaderValue,
@@ -333,10 +336,130 @@ describe("validate has method password", () => {
     });
   });
 
+  it("returns additional boolean properties min and max when nMinLength or nMaxLength are included as parameters", () => {
+    expect(validate.password("ThisIsAPassword*", true, 5, 20)).toEqual({
+      special: true,
+      number: false,
+      upper: true,
+      lower: true,
+      length: 16,
+      min: true,
+      max: true
+    });
+
+    expect(validate.password("ThisIsAPassword*", true, 17, 20)).toEqual({
+      special: true,
+      number: false,
+      upper: true,
+      lower: true,
+      length: 16,
+      min: false,
+      max: true
+    });
+
+    expect(validate.password("ThisIsAPassword*", true, 10, 15)).toEqual({
+      special: true,
+      number: false,
+      upper: true,
+      lower: true,
+      length: 16,
+      min: true,
+      max: false
+    });
+  });
+
   describe("validatePassword is an alias for validate.password", () => {
     expect(typeof validatePassword).toBe("function");
     expect(validatePassword).toBe(validate.password);
   });
+});
+
+describe("validate has method isValidPassword", () => {
+  it("is a function", () => {
+    expect(typeof validate.isValidPassword).toBe("function");
+  });
+
+  it("takes up to four arguments (password, bRequireSpecial, nMinLength, nMaxLength) and returns true for vaild passwords", () => {
+    expect(validate.isValidPassword("ThisIsAPassword1*", true, 8, 20)).toEqual(true);
+
+    expect(validate.isValidPassword("ThisPasswordIsValid1")).toEqual(true);
+
+    expect(validate.isValidPassword("ThisPasswordIsValid1", false, 8, 20)).toEqual(true);
+    
+  });
+
+  it("returns false for invalid passwords", () => {
+    expect(validate.isValidPassword("thisisapassword1*")).toEqual(false);
+
+    expect(validate.isValidPassword("THISISAPASSWORD1*")).toEqual(false);
+
+    expect(validate.isValidPassword("1561321", true)).toEqual(false);
+
+    expect(validate.isValidPassword("ThisIsAPassword*", true)).toEqual(false);
+  });
+
+  describe("isValidPassword is an alias for validate.isValidPassword", () => {
+    expect(typeof isValidPassword).toBe("function");
+    expect(isValidPassword).toBe(validate.isValidPassword);
+  });
+  
+});
+
+describe("validate has method setPasswordRequirements", () => {
+  it("is a function", () => {
+    expect(typeof validate.setPasswordRequirements).toBe("function");
+  });
+
+  it("accepts an object of password requirements { upper, lower, number, special, min, max }", () => {
+    expect(validate.setPasswordRequirements({ upper: true, lower: true, number: false, special: false, min: 4, max: 20 })).toBe(true);
+
+    expect(isValidPassword("ThisIsValid")).toBe(true);
+
+    validate.setPasswordRequirements({ upper: false, lower: false, number: true, special: false });
+    
+    expect(isValidPassword("1040")).toBe(true);
+
+    validate.setPasswordRequirements({ special: true, number: false });
+
+    expect(isValidPassword("&*^%")).toBe(true);
+
+    resetPasswordRequirements();
+  });
+
+  it("can be overridden by the bRequireSpecial, nMinLength, and nMaxLength parameters of the validate methods", () => {
+    setPasswordRequirements({ upper: true, lower: true, number: true, special: false });
+
+    expect(isValidPassword("ThisIsNotValid1", true)).toBe(false);
+    expect(isValidPassword("ThisIsNotValid1", false, 20)).toBe(false);
+    expect(isValidPassword("ThisIsValid1*", true, 8, 20)).toBe(true);
+
+    resetPasswordRequirements();
+  });
+
+  describe("setPasswordRequirements is an alias for validate.setPasswordRequirements", () => {
+    expect(typeof setPasswordRequirements).toBe("function");
+    expect(setPasswordRequirements).toBe(validate.setPasswordRequirements);
+  });
+});
+
+describe("validate has method resetPasswordRequirements", () => {
+  it("is a function", () => {
+    expect(typeof validate.resetPasswordRequirements).toBe("function");
+  });
+
+  it("resets the password requirements options to the default behavior", () => {
+    setPasswordRequirements({ upper: false, lower: false, number: false, special: true });
+
+    expect(isValidPassword("*****")).toBe(true);
+
+    resetPasswordRequirements();
+
+    expect(isValidPassword("*****")).toBe(false);
+    expect(isValidPassword("TEST1")).toBe(false);
+    expect(isValidPassword("test1")).toBe(false);
+    expect(isValidPassword("Test1")).toBe(true);
+  });
+
 });
 
 describe("validate has method phoneNumber", () => {

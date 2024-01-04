@@ -176,6 +176,31 @@ The "validate" utility provides several validation methods, from domains to ipv6
   const special = validate.hasSpecial("Test Password@1");
   console.log(special); // true
 
+  // added for v1.2.0
+  let validPass = validate.isValidPassword("TestPassword1");
+  console.log(validPass); // true
+
+  validPass = validate.isValidPassword("TestPassword1", true); // include bRequireSpecial
+  console.log(validPass); // false
+
+  validPass = validate.isValidPassword("TestPassword1*", true, 4, 20); // include min and max length of the password, or just min length
+  console.log(validPass); // true
+
+  validate.setPasswordRequirements({ upper: true, lower: true, number: false, special: true, min: 6, max: 16 });
+
+  validPass = validate.isValidPassword("TestPassword*");
+  console.log(validPass); // true
+
+  validate.setPasswordRequirements({ upper: false });
+
+  validPass = validate.isValidPassword("testpassword", false); // you can override the requirements for special, min length, and max length
+  console.log(validPass); // true
+
+  validate.resetPasswordRequirements();
+
+  validPass = validate.isValidPassword("testpassword*");
+  console.log(validPass); // false
+
 ```
 # License #
 

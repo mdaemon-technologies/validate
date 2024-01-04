@@ -220,15 +220,156 @@ export function hasSpecial(str) {
     return /[!-/]+|[:-@]+|[[-`]+|[{-~]/.test(str);
 }
 
-export function validatePassword(str, bRequireSpecial) {
-    return {
+const passwordRequirements = {
+    requireUpper: false,
+    requireLower: false,
+    requireNumber: false,
+    requireSpecial: false,
+    requireMinLength: -1,
+    requireMaxLength: -1,
+    setByUser: false
+};
+
+export function setPasswordRequirements(obj) {
+    if (typeof obj.upper !== "undefined") {
+        passwordRequirements.requireUpper = !!obj.upper;
+    }
+    if (typeof obj.lower !== "undefined") {
+        passwordRequirements.lower = !!obj.lower;
+    }
+    if (typeof obj.special !== "undefined") {
+        passwordRequirements.requireSpecial = !!obj.special;
+    }
+    if (typeof obj.number !== "undefined") {
+        passwordRequirements.requireNumber = !!obj.number;
+    }
+    if (typeof obj.min === "number" && obj.min > 0) {
+        passwordRequirements.requireMinLength = obj.min;
+    }
+    if (typeof obj.max === "number" && obj.max > 0) {
+        passwordRequirements.requireMaxLength = obj.max;
+    }
+
+    if (passwordRequirements.max > 0 && passwordRequirements.min > 0 && passwordRequirements.max <= passwordRequirements.min) {
+        console.error("The minimum password length requirement must be less than the maximum password length requirement");
+        return false;
+    }
+
+    passwordRequirements.setByUser = true;
+    return true;
+}
+
+export function resetPasswordRequirements() {
+    passwordRequirements.requireUpper = false;
+    passwordRequirements.requireLower = false;
+    passwordRequirements.requireNumber = false;
+    passwordRequirements.requireSpecial = false;
+    passwordRequirements.requireMinLength = -1;
+    passwordRequirements.requireMaxLength = -1;
+    passwordRequirements.setByUser = false;
+}
+
+export function validatePassword(str, bRequireSpecial, nMinLength, nMaxLength) {
+    let ret = { };
+    if (typeof str !== "string") {
+        ret = { special: false, lower: false, upper: false, number: false, length: 0 };
+        if (typeof nMinLength === "number" || (passwordRequirements.setByUser && passwordRequirements.requireMinLength > 0)) {
+            ret.min = false;
+        }
+
+        if (typeof nMaxLength === "number" || (passwordRequirements.setByUser && passwordRequirements.requireMaxLength > 0)) {
+            ret.max = false;
+        }
+        return ret;
+    }
+
+    if (passwordRequirements.setByUser) {
+        let req = Object.assign(passwordRequirements);
+        if ((req.requireSpecial && typeof bRequireSpecial === "undefined") || bRequireSpecial) {
+            ret.special = hasSpecial(str);
+        }
+        
+        if (req.requireMinLength > 0 && typeof nMinLength !== "number") {
+            ret.min = str.length >= req.requireMinLength;
+        }
+        else if (typeof nMinLength === "number" && nMinLength > 0) {
+            ret.min = str.length >= nMinLength;
+        }
+
+        if (req.requireMaxLength > 0 && typeof nMaxLength !== "number") {
+            ret.max = str.length <= req.requireMaxLength;
+        }
+        else if (typeof nMaxLength === "number" && nMaxLength > 0) {
+            ret.max = str.length <= nMaxLength;
+        }
+
+        if (req.requireLower) {
+            ret.lower = hasLowerCase(str);
+        }
+        
+        if (req.requireUpper) {
+            ret.upper = hasUpperCase(str);
+        }
+
+        if (req.requireNumber) {
+            ret.number = hasNumber(str);
+        }
+
+        return ret;
+    }
+
+    ret = {
         special: bRequireSpecial ? hasSpecial(str) : true,
         lower: hasLowerCase(str),
         upper: hasUpperCase(str),
         number: hasNumber(str),
         length: str.length
+    };
+
+    if (typeof nMinLength === "number") {
+        ret.min = str.length >= nMinLength;
     }
+
+    if (typeof nMaxLength === "number") {
+        ret.max = str.length <= nMaxLength;
+    }
+
+    return ret;
 }
+
+export function isValidPassword(str, bRequireSpecial, nMinLength, nMaxLength) {
+    if (typeof str !== "string") {
+        return false;
+    }
+
+    let ret = validatePassword(str, bRequireSpecial, nMinLength, nMaxLength);
+    if (typeof ret.lower !== "undefined" && !ret.lower) {
+        return false;
+    }
+
+    if (typeof ret.upper !== "undefined" && !ret.upper) {
+        return false;
+    }
+
+    if (typeof ret.number !== "undefined" && !ret.number) {
+        return false;
+    }
+
+    if (typeof ret.special !== "undefined" && !ret.special) {
+        return false;
+    }
+
+    if (typeof ret.min !== "undefined" && !ret.min) {
+        return false;
+    }
+
+    if (typeof ret.max !== "undefined" && !ret.max) {
+        return false;
+    }
+
+    return true;
+}
+
 
 const validate = {
     domain: validateDomain,
@@ -245,7 +386,10 @@ const validate = {
     ldapDN: validateLdapDN,
     ip: validateIPAddress,
     password: validatePassword,
+    isValidPassword,
     phoneNumber: validatePhoneNumber,
+    resetPasswordRequirements,
+    setPasswordRequirements,
     windowsFileName: validateWindowsFileName,
     windowsPath: validateWindowsPath
 };
