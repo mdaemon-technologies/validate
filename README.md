@@ -164,42 +164,48 @@ The "validate" utility provides several validation methods, from domains to ipv6
    */
 
   // validate each part individually
-  const lower = validate.hasLowerCase("Test Password@1");
-  console.log(lowerCase); // true
+  validate.hasLowerCase("Test Password@1"); // true
+  validate.hasLowerCase("TEST PASSWORD"); // false
 
-  const upper = validate.hasUpperCase("Test Password@1");
-  console.log(upperCase); // true
+  validate.hasUpperCase("Test Password@1"); // true
+  validate.hasUpperCase("test password"); // false
 
-  const number = validate.hasNumber("Test Password@1");
-  console.log(number); // true
+  validate.hasNumber("Test Password@1"); // true
+  validate.hasNumber("test password"); // false
 
-  const special = validate.hasSpecial("Test Password@1");
-  console.log(special); // true
+  validate.hasSpecial("Test Password@1"); // true
+  validate.hasSpecial("test password1"); // false
 
   // added for v1.2.0
-  let validPass = validate.isValidPassword("TestPassword1");
-  console.log(validPass); // true
+  validate.isValidPassword("TestPassword1"); // true
 
-  validPass = validate.isValidPassword("TestPassword1", true); // include bRequireSpecial
-  console.log(validPass); // false
+  // include bRequireSpecial
+  validate.isValidPassword("TestPassword1", true); // false
 
-  validPass = validate.isValidPassword("TestPassword1*", true, 4, 20); // include min and max length of the password, or just min length
-  console.log(validPass); // true
+  // include min and max length of the password, or just min length
+  validate.isValidPassword("TestPassword1*", true, 4, 20); // true
+  
+  // returns false if min >= max
+  // numbers less than 1 min and max are ignored
+  validate.setPasswordRequirements({ 
+    upper: true, 
+    lower: true, 
+    number: false, 
+    special: true, 
+    min: 6, 
+    max: 16 
+  }); // true
 
-  validate.setPasswordRequirements({ upper: true, lower: true, number: false, special: true, min: 6, max: 16 });
+  validate.isValidPassword("TestPassword*"); // true
+  
+  validate.setPasswordRequirements({ upper: false }); // true
 
-  validPass = validate.isValidPassword("TestPassword*");
-  console.log(validPass); // true
-
-  validate.setPasswordRequirements({ upper: false });
-
-  validPass = validate.isValidPassword("testpassword", false); // you can override the requirements for special, min length, and max length
-  console.log(validPass); // true
-
+  // you can override the requirements for special, min length, and max length
+  validate.isValidPassword("testpassword", false); // true
+  
   validate.resetPasswordRequirements();
 
-  validPass = validate.isValidPassword("testpassword*");
-  console.log(validPass); // false
+  validate.isValidPassword("testpassword*"); // false
 
 ```
 # License #
