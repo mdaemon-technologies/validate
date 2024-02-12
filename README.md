@@ -1,3 +1,5 @@
+[![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmdaemon-technologies%2Fvalidate%2Fmain%2Fpackage.json&query=%24.version&prefix=v&label=npm&color=blue)](https://www.npmjs.com/package/@mdaemon/validate) [![install size](https://packagephobia.com/badge?p=@mdaemon/validate)](https://packagephobia.com/result?p=@mdaemon/validate) [![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmdaemon-technologies%2Fvalidate%2Fmain%2Fpackage.json&query=%24.license&prefix=v&label=license&color=green)](https://github.com/mdaemon-technologies/validate/blob/main/LICENSE) [![Node.js CI](https://github.com/mdaemon-technologies/validate/actions/workflows/node.js.yml/badge.svg)](https://github.com/mdaemon-technologies/validate/actions/workflows/node.js.yml)
+
 # @mdaemon/validate, A Dependency Free input validation library
 [ [@mdaemon/validate on npm](https://www.npmjs.com/package/@mdaemon/validate "npm") ]
 
