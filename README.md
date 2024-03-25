@@ -213,3 +213,8 @@ The "validate" utility provides several validation methods, from domains to ipv6
 # License #
 
 Published under the [LGPL-2.1 license](https://github.com/mdaemon-technologies/validate/blob/main/LICENSE "LGPL-2.1 License").
+
+Published by<br/> 
+<b>MDaemon Technologies, Ltd.<br/>
+Simple Secure Email</b><br/>
+[https://www.mdaemon.com](https://www.mdaemon.com)
