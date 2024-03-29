@@ -329,6 +329,17 @@ export function hasSpecial(str) {
     return /[!-/]+|[:-@]+|[[-`]+|[{-~]/.test(str);
 }
 
+/**
+ * An object representing the password requirements.
+ * 
+ * @property {boolean} requireUpper - Whether an uppercase character is required.
+ * @property {boolean} requireLower - Whether a lowercase character is required. 
+ * @property {boolean} requireNumber - Whether a number is required.
+ * @property {boolean} requireSpecial - Whether a special character is required.
+ * @property {number} requireMinLength - The minimum password length required.
+ * @property {number} requireMaxLength - The maximum password length allowed.
+ * @property {boolean} setByUser - Whether the requirements were set by the user.
+ */
 const passwordRequirements = {
     requireUpper: false,
     requireLower: false,
