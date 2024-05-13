@@ -2,9 +2,10 @@
   "name": "@mdaemon/validate",
   "version": "1.2.2",
   "description": "A validation library used by MDaemon Remote Administration",
-  "main": "dist/validate.cjs",
+  "main": "dist/validate.umd.js",
   "module": "dist/validate.mjs",
   "browser": "dist/validate.umd.js",
+  "common": "dist/validate.cjs",
   "typings": "dist/index.d.ts",
   "typescript": {
     "definition": "dist/index.d.ts"
