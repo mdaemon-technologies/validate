@@ -208,7 +208,11 @@ The "validate" utility provides several validation methods, from domains to ipv6
   validate.resetPasswordRequirements();
 
   validate.isValidPassword("testpassword*"); // false
+```
 
+### Validate Custom Schema ###
+
+```javascript
   // Schema validation examples
     const userSchema = {
       type: 'object',
