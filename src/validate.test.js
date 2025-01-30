@@ -19,7 +19,8 @@ const {
   validatePassword,
   validatePhoneNumber,
   validateWindowsFileName,
-  validateWindowsPath
+  validateWindowsPath,
+  createSchemaValidator
 } = v;
 
 const validate = v.default;
@@ -549,5 +550,136 @@ describe("validate has method hasControlCharacters", () => {
   describe("hasControlCharacters is an alias for validate.hasControlCharacters", () => {
     expect(typeof hasControlCharacters).toBe("function");
     expect(hasControlCharacters).toBe(validate.hasControlCharacters);
+  });
+});
+
+describe("validate schema functionality", () => {
+  it("throws TypeError if schema name is not provided", () => {
+    expect(() => createSchemaValidator()).toThrow(TypeError);
+    expect(() => createSchemaValidator(null)).toThrow(TypeError);
+    expect(() => createSchemaValidator(123)).toThrow(TypeError);
+  });
+
+  it("throws TypeError if schema object is not provided", () => {
+    expect(() => createSchemaValidator("test")).toThrow(TypeError);
+    expect(() => createSchemaValidator("test", null)).toThrow(TypeError);
+    expect(() => createSchemaValidator("test", "invalid")).toThrow(TypeError);
+  });
+
+  it("validates object against simple schema", () => {
+    const validator = createSchemaValidator("user", {
+      name: { type: "string", required: true },
+      age: { type: "number" }
+    });
+
+    const validResult = validator({
+      name: "John",
+      age: 30
+    });
+    
+    expect(validResult.valid).toBe(true);
+    expect(validResult.errors).toHaveLength(0);
+
+    const invalidResult = validator({
+      age: "30"
+    });
+    expect(invalidResult.valid).toBe(false);
+    expect(invalidResult.errors).toHaveLength(2);
+  });
+
+  it("validates string length constraints", () => {
+    const validator = createSchemaValidator("product", {
+      code: { type: "string", minLength: 3, maxLength: 10 }
+    });
+
+    expect(validator({ code: "abc" }).valid).toBe(true);
+    expect(validator({ code: "ab" }).valid).toBe(false);
+    expect(validator({ code: "12345678901" }).valid).toBe(false);
+  });
+
+  it("validates number range constraints", () => {
+    const validator = createSchemaValidator("score", {
+      value: { type: "number", minimum: 0, maximum: 100 }
+    });
+
+    expect(validator({ value: 50 }).valid).toBe(true);
+    expect(validator({ value: -1 }).valid).toBe(false);
+    expect(validator({ value: 101 }).valid).toBe(false);
+  });
+
+  it("validates boolean values", () => {
+    const validator = createSchemaValidator("settings", {
+      active: { type: "boolean", required: true }
+    });
+
+    expect(validator({ active: true }).valid).toBe(true);
+    expect(validator({ active: false }).valid).toBe(true);
+    expect(validator({ active: "true" }).valid).toBe(false);
+    expect(validator({}).valid).toBe(false);
+  });
+
+  it("validates array type and length constraints", () => {
+    const validator = createSchemaValidator("list", {
+      items: { type: "array", arraySchema: { type: "number" }, minItems: 1, maxItems: 3 }
+    });
+
+    expect(validator({ items: [1, 2] }).valid).toBe(true);
+    expect(validator({ items: [] }).valid).toBe(false);
+    expect(validator({ items: [1, 2, 3, 4] }).valid).toBe(false);
+    expect(validator({ items: "not-array" }).valid).toBe(false);
+  });
+
+  it("validates nested object schemas", () => {
+    const validator = createSchemaValidator("nested", {
+      user: {
+        type: "object",
+        properties: {
+          name: { type: "string", required: true },
+          address: {
+            type: "object",
+            properties: {
+              street: { type: "string", required: true },
+              city: { type: "string", required: true }
+            }
+          }
+        }
+      }
+    });
+
+    expect(validator({
+      user: {
+        name: "John",
+        address: {
+          street: "123 Main St",
+          city: "Boston"
+        }
+      }
+    }).valid).toBe(true);
+
+    expect(validator({
+      user: {
+        name: "John",
+        address: {
+          street: "123 Main St"
+        }
+      }
+    }).valid).toBe(false);
+  });
+
+  it("handles multiple field validations", () => {
+    const validator = createSchemaValidator("complex", {
+      id: { type: "string", required: true },
+      count: { type: "number", minimum: 0 },
+      enabled: { type: "boolean" }
+    });
+
+    const result = validator({
+      id: 123,
+      count: -1,
+      enabled: "false"
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toHaveLength(3);
   });
 });

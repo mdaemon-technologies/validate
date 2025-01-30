@@ -531,10 +531,182 @@ export function isValidPassword(str, bRequireSpecial, nMinLength, nMaxLength) {
     return true;
 }
 
+/*
+ * Schema validation functions
+ * 
+ * Example schemas:
+ * 
+ * const userSchema = {
+ *   type: 'object',
+ *   properties: {
+ *     name: { type: 'string', required: true, minLength: 2 },
+ *     age: { type: 'number', minimum: 0, maximum: 120 },
+ *     email: { type: 'string', required: true }
+ *   }
+ * }
+ * 
+ * const productSchema = {
+ *   type: 'object', 
+ *   properties: {
+ *     id: { type: 'string', required: true },
+ *     price: { type: 'number', required: true, minimum: 0 },
+ *     inStock: { type: 'boolean', required: true }
+ *   }
+ * }
+ */
+
+const schemas = new Map();
+
+export function getSchema(name) {
+    return schemas.get(name);
+}
+
+export function updateSchema(name, schema) {
+    schemas.set(name, schema);
+}
+
+function validateSchema(schema, value, depth) {
+    if (typeof depth !== "number") {
+        depth = 0;
+    }
+    
+    const result = {
+        valid: true,
+        errors: []
+    };
+
+    if (schema.type) {
+        const valueType = typeof value;
+        if (schema.type === 'number' && valueType !== 'number') {
+            result.valid = false;
+            result.errors.push(`Expected number, got ${valueType}`);
+        } 
+        else if (schema.type === 'string' && valueType !== 'string') {
+            result.valid = false;
+            result.errors.push(`Expected string, got ${valueType}`);
+        } 
+        else if (schema.type === 'boolean' && valueType !== 'boolean') {
+            result.valid = false;
+            result.errors.push(`Expected boolean, got ${valueType}`);
+        }
+        else if (schema.type === "array" && !Array.isArray(value)) {
+            result.valid = false;
+            result.errors.push(`Expected array, got ${valueType}`);
+        }
+        else if (schema.type === 'object' && valueType !== 'object') {
+            result.valid = false;
+            result.errors.push(`Expected object, got ${valueType}`);
+        }
+
+        if (schema.type === "array" && Array.isArray(value)) {
+            if (typeof schema.arraySchema === "object" && depth < 10) {
+                value.forEach((item, index) => {
+                    const itemResult = validateSchema(schema.arraySchema, item, depth + 1)
+                    if (!itemResult.valid) {
+                        result.valid = false
+                        itemResult.errors.forEach(error => {
+                            result.errors.push(`[${index}]: ${error}`)
+                        });
+                    }
+                });
+            }
+        }
+        else if (schema.type === "object" && valueType === "object") {
+            if (schema.properties && depth < 10) {
+                for (const [propName, propSchema] of Object.entries(schema.properties)) {
+                    const propResult = validateSchema(propSchema, value[propName], depth + 1)
+                    if (!propResult.valid) {
+                        result.valid = false
+                        propResult.errors.forEach(error => {
+                            result.errors.push(`${propName}: ${error}`)
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    if (schema.required && (value === undefined || value === null)) {
+        result.valid = false;
+        result.errors.push('Value is required');
+    }
+
+    if (typeof schema.minLength ==="number" && typeof value === 'string' && value.length < schema.minLength) {
+        result.valid = false;
+        result.errors.push(`Minimum length is ${schema.minLength}`);
+    }
+
+    if (typeof schema.maxLength === "number" && typeof value === 'string' && value.length > schema.maxLength) {
+        result.valid = false;
+        result.errors.push(`Maximum length is ${schema.maxLength}`);
+    }
+
+    if (typeof schema.minimum === "number" && typeof value === 'number' && value < schema.minimum) {
+        result.valid = false;
+        result.errors.push(`Minimum value is ${schema.minimum}`);
+    }
+
+    if (typeof schema.maximum === "number" && typeof value === 'number' && value > schema.maximum) {
+        result.valid = false;
+        result.errors.push(`Maximum value is ${schema.maximum}`);
+    }
+
+    if (typeof schema.minItems === "number" && Array.isArray(value) && value.length < schema.minItems) {
+        result.valid = false;
+        result.errors.push(`Minimum length is ${schema.minItems}`);
+    }
+
+    if (typeof schema.maxItems === "number" && Array.isArray(value) && value.length > schema.maxItems) {
+        result.valid = false;
+        result.errors.push(`Maximum length is ${schema.maxItems}`);
+    }
+
+    console.log(JSON.stringify(result));
+    return result;
+}
+
+function getSchemaValidatorFunction(name) {
+    return (input) => {
+        const schema = schemas.get(name);
+        const results = [];
+
+        for (const [field, rules] of Object.entries(schema)) {
+            const result = validateSchema(rules, input[field]);
+            if (!result.valid) {
+                results.push({
+                    field,
+                    errors: result.errors
+                });
+            }
+        }
+
+        return {
+            valid: results.length === 0,
+            errors: results
+        };
+    };
+}
+
+export function createSchemaValidator(name, schema) {
+    if (!name || typeof name !== "string") {
+        throw new TypeError("A string is required for the schema name");
+    }
+
+    if (!schema || typeof schema !== "object") {
+        throw new TypeError("A JSON object is required for the schema");
+    }
+
+    schemas.set(name, schema);
+
+    return getSchemaValidatorFunction(name);
+}
 
 const validate = {
     domain: validateDomain,
     email: validateEmailAddress,
+    createSchemaValidator: createSchemaValidator,
+    getSchema: getSchema,
+    updateSchema: updateSchema,
     hasControlCharacters: hasControlCharacters,
     hasLowerCase: hasLowerCase,
     hasNumber: hasNumber,
