@@ -209,6 +209,70 @@ The "validate" utility provides several validation methods, from domains to ipv6
 
   validate.isValidPassword("testpassword*"); // false
 
+  // Schema validation examples
+    const userSchema = {
+      type: 'object',
+      properties: {
+        name: { type: 'string', required: true, minLength: 2 },
+        age: { type: 'number', minimum: 0, maximum: 120 },
+        email: { type: 'string', required: true }
+      }
+    };
+  
+    // Create a validator function for the schema
+    const validateUser = validate.createSchemaValidator('user', userSchema);
+  
+    // Validate an object against the schema
+    const user = {
+      name: 'John',
+      age: 30,
+      email: 'john@example.com'
+    };
+    validateUser(user); // { valid: true, errors: [] }
+  
+    // Invalid object example
+    const invalidUser = {
+      name: 'J', // too short
+      age: 150, // exceeds maximum
+      email: undefined // missing required field
+    };
+    validateUser(invalidUser); 
+    /* Returns:
+    {
+      valid: false,
+      errors: [
+        { field: 'name', errors: ['Minimum length is 2'] },
+        { field: 'age', errors: ['Maximum value is 120'] },
+        { field: 'email', errors: ['Value is required'] }
+      ]
+    }
+    */
+  
+    // Array schema example
+    const todoListSchema = {
+      type: 'array',
+      arraySchema: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', required: true },
+          task: { type: 'string', required: true, minLength: 1 },
+          completed: { type: 'boolean', required: true }
+        }
+      },
+      minItems: 1,
+      maxItems: 10
+    };
+  
+    const validateTodoList = validate.createSchemaValidator('todoList', todoListSchema);
+  
+    const todoList = [{
+      id: '1',
+      task: 'Buy groceries',
+      completed: false
+    }];
+    validateTodoList(todoList); // { valid: true, errors: [] }
+  
+
 ```
 # License #
 
