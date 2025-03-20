@@ -568,8 +568,11 @@ describe("validate schema functionality", () => {
 
   it("validates object against simple schema", () => {
     const validator = createSchemaValidator("user", {
-      name: { type: "string", required: true },
-      age: { type: "number" }
+      type: "object",
+      properties: {
+        name: { type: "string", required: true },
+        age: { type: "number" }
+      }
     });
 
     const validResult = validator({
@@ -584,12 +587,15 @@ describe("validate schema functionality", () => {
       age: "30"
     });
     expect(invalidResult.valid).toBe(false);
-    expect(invalidResult.errors).toHaveLength(2);
+    expect(invalidResult.errors).toHaveLength(3);
   });
 
   it("validates string length constraints", () => {
     const validator = createSchemaValidator("product", {
-      code: { type: "string", minLength: 3, maxLength: 10 }
+      type: "object",
+      properties: {
+        code: { type: "string", minLength: 3, maxLength: 10 }
+      }
     });
 
     expect(validator({ code: "abc" }).valid).toBe(true);
@@ -599,7 +605,10 @@ describe("validate schema functionality", () => {
 
   it("validates number range constraints", () => {
     const validator = createSchemaValidator("score", {
-      value: { type: "number", minimum: 0, maximum: 100 }
+      type: "object",
+      properties: {
+        value: { type: "number", minimum: 0, maximum: 100 }
+      }
     });
 
     expect(validator({ value: 50 }).valid).toBe(true);
@@ -609,7 +618,10 @@ describe("validate schema functionality", () => {
 
   it("validates boolean values", () => {
     const validator = createSchemaValidator("settings", {
-      active: { type: "boolean", required: true }
+      type: "object",
+      properties: {
+        active: { type: "boolean", required: true }
+      }
     });
 
     expect(validator({ active: true }).valid).toBe(true);
@@ -620,7 +632,7 @@ describe("validate schema functionality", () => {
 
   it("validates array type and length constraints", () => {
     const validator = createSchemaValidator("list", {
-      items: { type: "array", arraySchema: { type: "number" }, minItems: 1, maxItems: 3 }
+      type: "object", properties: { items: { type: "array", arraySchema: { type: "number" }, minItems: 1, maxItems: 3 } }
     });
 
     expect(validator({ items: [1, 2] }).valid).toBe(true);
@@ -631,15 +643,18 @@ describe("validate schema functionality", () => {
 
   it("validates nested object schemas", () => {
     const validator = createSchemaValidator("nested", {
-      user: {
-        type: "object",
-        properties: {
-          name: { type: "string", required: true },
-          address: {
-            type: "object",
-            properties: {
-              street: { type: "string", required: true },
-              city: { type: "string", required: true }
+      type: "object",
+      properties: {
+        user: {
+          type: "object",
+          properties: {
+            name: { type: "string", required: true },
+            address: {
+              type: "object",
+              properties: {
+                street: { type: "string", required: true },
+                city: { type: "string", required: true }
+              }
             }
           }
         }
@@ -668,9 +683,12 @@ describe("validate schema functionality", () => {
 
   it("handles multiple field validations", () => {
     const validator = createSchemaValidator("complex", {
-      id: { type: "string", required: true },
-      count: { type: "number", minimum: 0 },
-      enabled: { type: "boolean" }
+      type: "object",
+      properties: {
+        id: { type: "string", required: true },
+        count: { type: "number", minimum: 0 },
+        enabled: { type: "boolean" }
+      }
     });
 
     const result = validator({
@@ -746,33 +764,26 @@ describe("validate schema functionality", () => {
               type: "number",
               validate: (value) => value % 2 === 0
             },
-            url: {
+            domain: {
               type: "string",
-              validate: (value) => {
-                try {
-                  new URL(value);
-                  return true;
-                } catch {
-                  return false;
-                }
-              }
+              validate: validateDomain
             }
           }
         });
     
         expect(validator({
           even: 2,
-          url: "https://example.com"
+          domain: "example.com"
         }).valid).toBe(true);
     
         expect(validator({
           even: 3,
-          url: "not-a-url"
+          domain: "not-a-url"
         }).valid).toBe(false);
     
         expect(validator({
           even: 4,
-          url: "http://test.com/path?q=123"
+          domain: "www.test.com"
         }).valid).toBe(true);
       });
     

@@ -684,30 +684,11 @@ function getSchemaValidatorFunction(name) {
         const schema = schemas.get(name);
         const results = [];
 
-        if (schema.type === "array") {
-            if (!Array.isArray(input)) {
-                return {
-                    valid: false,
-                    errors: [`Expected array, got ${typeof input}`]
-                };
-            }
-            const result = validateSchema(schema, input);
-            if (!result.valid) {
-                results.push(...result.errors);
-            }
+        const result = validateSchema(schema, input);
+        if (!result.valid) {
+            results.push(...result.errors);
         }
-        else {
-            for (const [field, rules] of Object.entries(schema)) {
-                const result = validateSchema(rules, input[field]);
-                if (!result.valid) {
-                    results.push({
-                        field,
-                        errors: result.errors
-                    });
-                }
-            }
-        }
-
+        
         return {
             valid: results.length === 0,
             errors: results
