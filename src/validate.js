@@ -136,29 +136,29 @@ export function validateIPAddress(ip, useWildCards) {
     if (typeof ip !== "string") {
         return false;
     }
-    const ipv6 = ip.indexOf('.') === -1 && ip.indexOf(':') !== -1;
+    const ipv6 = ip.indexOf(".") === -1 && ip.indexOf(":") !== -1;
     if (useWildCards) {
-        let nIndex = ip.indexOf('*');
+        let nIndex = ip.indexOf("*");
         if (nIndex === -1) {
-            nIndex = ip.indexOf('#');
+            nIndex = ip.indexOf("#");
         }
         if (nIndex === -1) {
-            nIndex = ip.indexOf('?');
+            nIndex = ip.indexOf("?");
         }
 
         if (ipv6) {
             if (nIndex !== -1) {
-                nIndex = ip.indexOf(':');
+                nIndex = ip.indexOf(":");
                 if (nIndex === -1) {
                     return false;
                 }
 
-                nIndex = ip.indexOf(':', nIndex + 1);
+                nIndex = ip.indexOf(":", nIndex + 1);
                 if (nIndex === -1) {
                     return false;
                 }
 
-                nIndex = ip.indexOf(':', nIndex + 1);
+                nIndex = ip.indexOf(":", nIndex + 1);
                 if (nIndex === -1) {
                     return false;
                 }
@@ -166,30 +166,30 @@ export function validateIPAddress(ip, useWildCards) {
             }
         } else {
             if (nIndex !== -1) {
-                nIndex = ip.indexOf('.');
+                nIndex = ip.indexOf(".");
                 if (nIndex === -1) {
                     return false;
                 }
 
-                nIndex = ip.indexOf('.', nIndex + 1);
+                nIndex = ip.indexOf(".", nIndex + 1);
                 if (nIndex === -1) {
                     return false;
                 }
 
-                nIndex = ip.indexOf('.', nIndex + 1);
+                nIndex = ip.indexOf(".", nIndex + 1);
                 if (nIndex === -1) {
                     return false;
                 }
                 return true;
             }
 
-            nIndex = ip.indexOf('/');
-            if (nIndex !== -1 && ip.indexOf('.') === -1) {
-                nIndex = ip.indexOf(':');
+            nIndex = ip.indexOf("/");
+            if (nIndex !== -1 && ip.indexOf(".") === -1) {
+                nIndex = ip.indexOf(":");
                 if (nIndex === -1) {
                     return false;
                 }
-                nIndex = ip.indexOf(':', nIndex);
+                nIndex = ip.indexOf(":", nIndex);
                 if (nIndex === -1) {
                     return false;
                 }
@@ -537,20 +537,20 @@ export function isValidPassword(str, bRequireSpecial, nMinLength, nMaxLength) {
  * Example schemas:
  * 
  * const userSchema = {
- *   type: 'object',
+ *   type: "object",
  *   properties: {
- *     name: { type: 'string', required: true, minLength: 2 },
- *     age: { type: 'number', minimum: 0, maximum: 120 },
- *     email: { type: 'string', required: true }
+ *     name: { type: "string", required: true, minLength: 2 },
+ *     age: { type: "number", minimum: 0, maximum: 120 },
+ *     email: { type: "string", required: true }
  *   }
  * }
  * 
  * const productSchema = {
- *   type: 'object', 
+ *   type: "object", 
  *   properties: {
- *     id: { type: 'string', required: true },
- *     price: { type: 'number', required: true, minimum: 0 },
- *     inStock: { type: 'boolean', required: true }
+ *     id: { type: "string", required: true },
+ *     price: { type: "number", required: true, minimum: 0 },
+ *     inStock: { type: "boolean", required: true }
  *   }
  * }
  */
@@ -577,15 +577,15 @@ function validateSchema(schema, value, depth) {
 
     if (schema.type) {
         const valueType = typeof value;
-        if (schema.type === 'number' && valueType !== 'number') {
+        if (schema.type === "number" && valueType !== "number") {
             result.valid = false;
             result.errors.push(`Expected number, got ${valueType}`);
         } 
-        else if (schema.type === 'string' && valueType !== 'string') {
+        else if (schema.type === "string" && valueType !== "string") {
             result.valid = false;
             result.errors.push(`Expected string, got ${valueType}`);
         } 
-        else if (schema.type === 'boolean' && valueType !== 'boolean') {
+        else if (schema.type === "boolean" && valueType !== "boolean") {
             result.valid = false;
             result.errors.push(`Expected boolean, got ${valueType}`);
         }
@@ -593,7 +593,7 @@ function validateSchema(schema, value, depth) {
             result.valid = false;
             result.errors.push(`Expected array, got ${valueType}`);
         }
-        else if (schema.type === 'object' && valueType !== 'object') {
+        else if (schema.type === "object" && valueType !== "object") {
             result.valid = false;
             result.errors.push(`Expected object, got ${valueType}`);
         }
@@ -628,25 +628,30 @@ function validateSchema(schema, value, depth) {
 
     if (schema.required && (value === undefined || value === null)) {
         result.valid = false;
-        result.errors.push('Value is required');
+        result.errors.push("Value is required");
     }
 
-    if (typeof schema.minLength ==="number" && typeof value === 'string' && value.length < schema.minLength) {
+    if (Array.isArray(schema.options) && schema.options.length && !schema.options.includes(value)) {
+        result.valid = false;
+        result.errors.push(`Invalid value, expected one of: ${schema.options.join(", ")}`);
+    }
+
+    if (typeof schema.minLength ==="number" && typeof value === "string" && value.length < schema.minLength) {
         result.valid = false;
         result.errors.push(`Minimum length is ${schema.minLength}`);
     }
 
-    if (typeof schema.maxLength === "number" && typeof value === 'string' && value.length > schema.maxLength) {
+    if (typeof schema.maxLength === "number" && typeof value === "string" && value.length > schema.maxLength) {
         result.valid = false;
         result.errors.push(`Maximum length is ${schema.maxLength}`);
     }
 
-    if (typeof schema.minimum === "number" && typeof value === 'number' && value < schema.minimum) {
+    if (typeof schema.minimum === "number" && typeof value === "number" && value < schema.minimum) {
         result.valid = false;
         result.errors.push(`Minimum value is ${schema.minimum}`);
     }
 
-    if (typeof schema.maximum === "number" && typeof value === 'number' && value > schema.maximum) {
+    if (typeof schema.maximum === "number" && typeof value === "number" && value > schema.maximum) {
         result.valid = false;
         result.errors.push(`Maximum value is ${schema.maximum}`);
     }
@@ -661,7 +666,6 @@ function validateSchema(schema, value, depth) {
         result.errors.push(`Maximum length is ${schema.maxItems}`);
     }
 
-    console.log(JSON.stringify(result));
     return result;
 }
 
@@ -670,13 +674,27 @@ function getSchemaValidatorFunction(name) {
         const schema = schemas.get(name);
         const results = [];
 
-        for (const [field, rules] of Object.entries(schema)) {
-            const result = validateSchema(rules, input[field]);
+        if (schema.type === "array") {
+            if (!Array.isArray(input)) {
+                return {
+                    valid: false,
+                    errors: [`Expected array, got ${typeof input}`]
+                };
+            }
+            const result = validateSchema(schema, input);
             if (!result.valid) {
-                results.push({
-                    field,
-                    errors: result.errors
-                });
+                results.push(...result.errors);
+            }
+        }
+        else {
+            for (const [field, rules] of Object.entries(schema)) {
+                const result = validateSchema(rules, input[field]);
+                if (!result.valid) {
+                    results.push({
+                        field,
+                        errors: result.errors
+                    });
+                }
             }
         }
 

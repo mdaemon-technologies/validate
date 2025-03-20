@@ -682,4 +682,35 @@ describe("validate schema functionality", () => {
     expect(result.valid).toBe(false);
     expect(result.errors).toHaveLength(3);
   });
+
+  it("validates options schema correctly", () => {
+      const validator = createSchemaValidator("options", {
+        type: "array",
+        arraySchema: {
+          type: "object",
+          properties: {
+            label: { type: "string", required: true, options: ["Option 1", "Option 2"] },
+            value: { type: "string", required: true }
+          }
+        }
+      });
+  
+      let result = validator([
+        { label: "Option 1", value: "opt1" },
+        { label: "Option 2", value: "opt2" }
+      ]);
+      
+      expect(result.valid).toBe(true);
+  
+      expect(validator([
+        { label: "Option 1" },
+        { value: "opt2" }
+      ]).valid).toBe(false);
+  
+      expect(validator([
+        { label: 123, value: "opt1" },
+        { label: "Option 2", value: true }
+      ]).valid).toBe(false);
+    });
+  
 });

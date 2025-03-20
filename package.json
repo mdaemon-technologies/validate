@@ -1,6 +1,6 @@
 {
   "name": "@mdaemon/validate",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "description": "A validation library used by MDaemon Remote Administration",
   "main": "dist/validate.umd.js",
   "module": "dist/validate.mjs",
