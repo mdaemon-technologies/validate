@@ -631,11 +631,6 @@ function validateSchema(schema, value, depth) {
         result.errors.push("Value is required");
     }
 
-    if (Array.isArray(schema.options) && schema.options.length && !schema.options.includes(value)) {
-        result.valid = false;
-        result.errors.push(`Invalid value, expected one of: ${schema.options.join(", ")}`);
-    }
-
     if (typeof schema.minLength ==="number" && typeof value === "string" && value.length < schema.minLength) {
         result.valid = false;
         result.errors.push(`Minimum length is ${schema.minLength}`);
@@ -664,6 +659,21 @@ function validateSchema(schema, value, depth) {
     if (typeof schema.maxItems === "number" && Array.isArray(value) && value.length > schema.maxItems) {
         result.valid = false;
         result.errors.push(`Maximum length is ${schema.maxItems}`);
+    }
+
+    if (Array.isArray(schema.options) && schema.options.length && !schema.options.includes(value)) {
+        result.valid = false;
+        result.errors.push(`Invalid value, expected one of: ${schema.options.join(", ")}`);
+    }
+
+    if (typeof schema.validate === "function" && !schema.validate(value)) {
+        result.valid = false;
+        result.errors.push("Custom validation failed");
+    }
+
+    if (typeof schema.pattern === "string" && typeof value === "string" && !new RegExp(schema.pattern).test(value)) {
+        result.valid = false;
+        result.errors.push(`Value does not match pattern ${schema.pattern}`);
     }
 
     return result;

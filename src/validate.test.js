@@ -713,4 +713,67 @@ describe("validate schema functionality", () => {
       ]).valid).toBe(false);
     });
   
+    it("validates pattern matching correctly", () => {
+        const validator = createSchemaValidator("pattern", {
+          type: "object",
+          properties: {
+            zipCode: { type: "string", pattern: "^\\d{5}(-\\d{4})?$" },
+            phone: { type: "string", pattern: "^\\+?[0-9-]{10,}$" }
+          }
+        });
+    
+        expect(validator({
+          zipCode: "12345",
+          phone: "123-456-7890"
+        }).valid).toBe(true);
+    
+        expect(validator({
+          zipCode: "1234",
+          phone: "abc-def-ghij"
+        }).valid).toBe(false);
+    
+        expect(validator({
+          zipCode: "12345-6789",
+          phone: "+1-234-567-8900"
+        }).valid).toBe(true);
+      });
+    
+      it("validates using custom validation functions", () => {
+        const validator = createSchemaValidator("custom", {
+          type: "object",
+          properties: {
+            even: { 
+              type: "number",
+              validate: (value) => value % 2 === 0
+            },
+            url: {
+              type: "string",
+              validate: (value) => {
+                try {
+                  new URL(value);
+                  return true;
+                } catch {
+                  return false;
+                }
+              }
+            }
+          }
+        });
+    
+        expect(validator({
+          even: 2,
+          url: "https://example.com"
+        }).valid).toBe(true);
+    
+        expect(validator({
+          even: 3,
+          url: "not-a-url"
+        }).valid).toBe(false);
+    
+        expect(validator({
+          even: 4,
+          url: "http://test.com/path?q=123"
+        }).valid).toBe(true);
+      });
+    
 });

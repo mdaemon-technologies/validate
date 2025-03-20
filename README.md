@@ -277,6 +277,65 @@ The "validate" utility provides several validation methods, from domains to ipv6
       type: "personal"
     }];
     validateTodoList(todoList); // { valid: true, errors: [] }
+
+    // Pattern validation example
+    const usernameSchema = {
+      type: "object",
+      properties: {
+        username: { 
+          type: "string", 
+          required: true,
+          pattern: "^[a-zA-Z0-9_]{3,16}$" // Alphanumeric + underscore, 3-16 chars
+        }
+      }
+    };
+
+    const validateUsername = validate.createSchemaValidator("username", usernameSchema);
+
+    const validUsername = { username: "john_doe123" };
+    validateUsername(validUsername); // { valid: true, errors: [] }
+
+    const invalidUsername = { username: "j@hn!" };
+    validateUsername(invalidUsername); 
+    /* Returns:
+    {
+      valid: false, 
+      errors: [
+        { field: "username", errors: ["Value does not match pattern ^[a-zA-Z0-9_]{3,16}$"] }
+      ]
+    }
+    */
+
+    // Custom validation function example
+    const priceSchema = {
+      type: "object", 
+      properties: {
+        price: {
+          type: "number",
+          required: true,
+          validate: (value) => {
+            return value > 0 && Number.isInteger(value * 100); // Must be positive and max 2 decimal places
+          }
+        }
+      }
+    };
+
+    const validatePrice = validate.createSchemaValidator("price", priceSchema);
+
+    const validPrice = { price: 19.99 };
+    validatePrice(validPrice); // { valid: true, errors: [] }
+
+    const invalidPrice = { price: 19.999 };
+    validatePrice(invalidPrice);
+    /* Returns:
+    {
+      valid: false,
+      errors: [
+        { field: "price", errors: ["Custom validation failed"] }
+      ]
+    }
+    */
+    
   
 
 ```
