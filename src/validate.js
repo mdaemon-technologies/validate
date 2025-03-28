@@ -613,8 +613,9 @@ function validateSchema(schema, value, depth) {
         }
         else if (schema.type === "object" && valueType === "object") {
             if (schema.properties && depth < 10) {
-                for (const [propName, propSchema] of Object.entries(schema.properties)) {
-                    const propResult = validateSchema(propSchema, value[propName], depth + 1)
+                for (const propName in schema.properties) {
+                    const propSchema = schema.properties[propName];
+                    const propResult = validateSchema(propSchema, value[propName], depth + 1);
                     if (!propResult.valid) {
                         result.valid = false
                         propResult.errors.forEach(error => {
