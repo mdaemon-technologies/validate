@@ -557,12 +557,47 @@ export function isValidPassword(str, bRequireSpecial, nMinLength, nMaxLength) {
 
 const schemas = new Map();
 
-export function getSchema(name) {
-    return schemas.get(name);
+// we don't want to modify the original schema object, so we create a copy
+
+function copySchema(schema) {
+    if (!schema) {
+        return schema;
+    }
+
+    if (typeof schema === 'function') {
+        return schema;
+    }
+
+    if (Array.isArray(schema)) {
+        return schema.map(item => copySchema(item));
+    }
+
+    if (typeof schema === 'object') {
+        const copy = {};
+        for (const key in schema) {
+            if (Object.prototype.hasOwnProperty.call(schema, key)) {
+                copy[key] = copySchema(schema[key]);
+            }
+        }
+        return copy;
+    }
+
+    return schema;
 }
 
+export function getSchema(name) {   
+    let schema = schemas.get(name);
+    return copySchema(schema);
+}
+
+// we don't want to modify the original schema object, so we create a copy
+// and set it to the map
 export function updateSchema(name, schema) {
-    schemas.set(name, schema);
+    if (!name || typeof name !== "string") {
+        throw new TypeError("A string is required for the schema name");
+    }
+    
+    schemas.set(name, copySchema(schema));
 }
 
 function validateSchema(schema, value, depth) {
@@ -706,7 +741,7 @@ export function createSchemaValidator(name, schema) {
         throw new TypeError("A JSON object is required for the schema");
     }
 
-    schemas.set(name, schema);
+    updateSchema(name, schema);
 
     return getSchemaValidatorFunction(name);
 }

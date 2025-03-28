@@ -20,7 +20,8 @@ const {
   validatePhoneNumber,
   validateWindowsFileName,
   validateWindowsPath,
-  createSchemaValidator
+  createSchemaValidator,
+  getSchema
 } = v;
 
 const validate = v.default;
@@ -787,4 +788,68 @@ describe("validate schema functionality", () => {
         }).valid).toBe(true);
       });
     
+      it("validates a complex pattern with arrays of objects", () => {
+        const validator = createSchemaValidator("complexArray", {
+          type: "object",
+          properties: {
+            id: { type: "string", required: true, validate: (value) => typeof value === "string" && value.length >= 3 },
+            ival: { type: "number", required: true },
+            items: {
+              type: "array",
+              arraySchema: {
+                type: "object",
+                properties: {
+                  name: { type: "string", required: true },
+                  tags: {
+                    type: "array",
+                    arraySchema: { type: "string" },
+                    minItems: 1
+                  }
+                }
+              }
+            }
+          }
+        });
+    
+        expect(validator({
+          id: "123",
+          ival: 456,
+          items: [
+            { name: "Item 1", tags: ["tag1", "tag2"] },
+            { name: "Item 2", tags: ["tag3"] }
+          ]
+        }).valid).toBe(true);
+    
+        expect(validator({
+          items: [
+            { name: "Item 1", tags: [] },
+            { name: "Item 2" }
+          ]
+        }).valid).toBe(false);
+      });
+
+      it("ensures original schema cannot be modified through getSchema", () => {
+        const originalSchema = {
+          type: "object",
+          properties: {
+            name: { type: "string", required: true }
+          }
+        };
+
+        createSchemaValidator("immutableTest", originalSchema);
+        const retrievedSchema = getSchema("immutableTest");
+        
+        // Attempt to modify the retrieved schema
+        retrievedSchema.properties.name.required = false;
+        retrievedSchema.properties.newField = { type: "string" };
+        
+        // Verify original schema remains unchanged
+        expect(originalSchema.properties.name.required).toBe(true);
+        expect(originalSchema.properties.newField).toBeUndefined();
+        
+        // Verify validation still works with original rules
+        const validator = createSchemaValidator("immutableTest", originalSchema);
+        expect(validator({ name: "test" }).valid).toBe(true);
+        expect(validator({}).valid).toBe(false);
+      });
 });
