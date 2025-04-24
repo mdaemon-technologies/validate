@@ -1,6 +1,7 @@
 {
   "name": "@mdaemon/validate",
-  "version": "2.1.0",
+  "version": "3.0.0",
+  "type": "module",
   "description": "A validation library used by MDaemon Remote Administration",
   "main": "dist/validate.umd.js",
   "module": "dist/validate.mjs",
@@ -34,10 +35,15 @@
   },
   "homepage": "https://github.com/mdaemon-technologies/validate#readme",
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^23.0.7",
     "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.1.2",
+    "@types/jest": "^29.5.14",
     "jest": "^29.7.0",
-    "rollup": "^2.79.2"
+    "rollup": "^4.40.0",
+    "ts-jest": "^29.3.2",
+    "ts-node": "^10.9.2",
+    "tslib": "^2.8.1",
+    "typescript": "^5.8.3"
   },
   "files": [
     "dist"

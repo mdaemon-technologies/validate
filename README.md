@@ -3,27 +3,57 @@
 # @mdaemon/validate, A Dependency Free input validation library
 [ [@mdaemon/validate on npm](https://www.npmjs.com/package/@mdaemon/validate "npm") ]
 
-The "validate" utility provides several validation methods, from domains to ipv6, and email to LDAP.
+The "validate" utility provides several validation methods, from domains to ipv6, and email to LDAP, and schema validation methods.
+
+> **Note:** As of version 3.0.0, this library has been converted to TypeScript for improved type safety and developer experience.
 
 # Install #
 
 	  $ npm install @mdaemon/validate --save  
 
-# Node CommonJS #
+# Import / Require #
+
+## Node ESM (Recommended)
 ```javascript
-    const validate = require("@mdaemon/validate/dist/validate.cjs");
+// Import the default export
+import validate from "@mdaemon/validate";
+
+// Import specific functions
+import { validateDomain, validateEmailAddress } from "@mdaemon/validate";
 ```
 
-# Node Modules #
-
+## Node CommonJS
 ```javascript
-    import validate from "@mdaemon/validate/dist/validate.mjs";  
+// Require the default export
+const validate = require("@mdaemon/validate/dist/validate.cjs");
+
+// Destructuring specific functions
+const { validateDomain, validateEmailAddress } = require("@mdaemon/validate/dist/validate.cjs");
 ```
 
-# Web #
-```HTML
-    <script type="text/javascript" src="/path_to_modules/dist/validate.umd.js">
+## TypeScript
+```typescript
+// Import with full TypeScript support
+import validate from "@mdaemon/validate";
+import { validateDomain, ISchema, ISchemaValidationResult } from "@mdaemon/validate";
 ```
+
+## Browser/Web
+```html
+<script type="text/javascript" src="/path_to_modules/@mdaemon/validate/dist/validate.umd.js"></script>
+<script>
+  // Access via global variable
+  const isValid = validate.domain("example.com");
+</script>
+```
+
+# TypeScript Support
+
+This library includes full TypeScript definitions and interfaces:
+
+- `ISchema` - Interface for defining validation schemas
+- `ISchemaValidationResult` - Interface for validation results
+- Strong typing for all validation methods and parameters
 
 ### Validate domain syntax ###
 
