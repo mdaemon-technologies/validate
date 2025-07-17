@@ -15,6 +15,8 @@ import {
   validateHeaderValue,
   validateLdapDN,
   validateIPAddress,
+  validateIPv4,
+  validateIPv6,
   validateInt,
   validatePassword,
   validatePhoneNumber,
@@ -262,6 +264,63 @@ describe("validate has method ip", () => {
   it("validateIPAddress is an alias for validate.ip", () => {
     expect(typeof validateIPAddress).toBe("function");
     expect(validateIPAddress).toBe(validate.ip);
+  });
+});
+
+describe("validate has method ip", () => {
+  it("is a function", () => {
+    expect(typeof validate.ip).toBe("function");
+  });
+
+  it("validates IPv4 and IPv6 addresses", () => {
+    expect(validate.ip("::1", false)).toBe(true);
+    expect(validate.ip("1.1.1.1", false)).toBe(true);
+    expect(validate.ip("1.1.1.1/16", false)).toBe(true);
+    expect(validate.ip("fe80::500b:59e9:351:fbf3", false)).toBe(true);
+    expect(validate.ip("fe80::500b:59e9:351:fbf3/29", false)).toBe(true);
+  });
+
+  it("validateIPAddress is an alias for validate.ip", () => {
+    expect(typeof validateIPAddress).toBe("function");
+    expect(validateIPAddress).toBe(validate.ip);
+  });
+});
+
+describe("validate has method ipv4", () => {
+  it("is a function", () => {
+    expect(typeof validate.ipv4).toBe("function");
+  });
+
+  it("validates IPv4 addresses", () => {
+    expect(validate.ipv4("::1")).toBe(false);
+    expect(validate.ipv4("1.1.1.1")).toBe(true);
+    expect(validate.ipv4("1.1.1.1/16")).toBe(true);
+    expect(validate.ipv4("fe80::500b:59e9:351:fbf3")).toBe(false);
+    expect(validate.ipv4("fe80::500b:59e9:351:fbf3/29")).toBe(false);
+  });
+
+  it("validateIPv4 is an alias for validate.ipv4", () => {
+    expect(typeof validateIPv4).toBe("function");
+    expect(validateIPv4).toBe(validate.ipv4);
+  });
+});
+
+describe("validate has method ipv6", () => {
+  it("is a function", () => {
+    expect(typeof validate.ipv6).toBe("function");
+  });
+
+  it("validates IPv6 addresses", () => {
+    expect(validate.ipv6("::1")).toBe(true);
+    expect(validate.ipv6("1.1.1.1")).toBe(false);
+    expect(validate.ipv6("1.1.1.1/16")).toBe(false);
+    expect(validate.ipv6("fe80::500b:59e9:351:fbf3")).toBe(true);
+    expect(validate.ipv6("fe80::500b:59e9:351:fbf3/29")).toBe(true);
+  });
+
+  it("validateIPv6 is an alias for validate.ipv6", () => {
+    expect(typeof validateIPv6).toBe("function");
+    expect(validateIPv6).toBe(validate.ipv6);
   });
 });
 

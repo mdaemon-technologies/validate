@@ -98,6 +98,18 @@ This library includes full TypeScript definitions and interfaces:
     // use wild cards * or ? or #
     validIP = validate.ip("10.*.*.###", true); 
     console.log(validIP); // true
+
+    validIP = validate.ipv4("2001:0db8:85a3:0000:0000:8a2e:0370:7334");
+    console.log(validIP); // false
+
+    validIP = validate.ipv4("10.10.50.1");
+    console.log(validIP); // true
+
+    validIP = validate.ipv6("2001:0db8:85a3:0000:0000:8a2e:0370:7334");
+    console.log(validIP); // true
+
+    validIP = validate.ipv6("10.10.50.1");
+    console.log(validIP); // false
 ```
 
 ### Validate LDAP DN syntax ###
