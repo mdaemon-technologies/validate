@@ -1,6 +1,8 @@
 import typescript from '@rollup/plugin-typescript'
 import terser from '@rollup/plugin-terser';
-import pkg from './package.json' with { type: "json" };
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pkg = require('./package.json');
 
 export default [
 	// browser-friendly UMD build
