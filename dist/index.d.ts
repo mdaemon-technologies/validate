@@ -1,11 +1,12 @@
 export interface MDaemonValidPassword {
-    special: boolean;
-    lower: boolean;
     upper: boolean;
+    lower: boolean;
     number: boolean;
+    special: boolean;
     length: number;
     min?: boolean;
     max?: boolean;
+    badPassword?: boolean;
 }
 
 export interface MDaemonPasswordRequirements {
@@ -15,6 +16,7 @@ export interface MDaemonPasswordRequirements {
     special?: boolean;
     min?: number;
     max?: number;
+    badPasswords?: string[];
 }
 
 export interface ISchema {
@@ -64,7 +66,7 @@ export function hasNumber(str: string): boolean;
 export function hasSpecial(str: string): boolean;
 export function validatePassword(str: string, bRequireSpecial: boolean, nMinLength?: number, nMaxLength?: number): MDaemonValidPassword;
 export function isValidPassword(str: string, bRequireSpecial: boolean, nMinLength: number, nMaxLength: number): boolean;
-export function setPasswordRequirements(obj: Partial<MDaemonValidPassword>): boolean;
+export function setPasswordRequirements(obj: Partial<MDaemonPasswordRequirements>): boolean;
 export function resetPasswordRequirements(): void;
 
 // Schema-related functions

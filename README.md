@@ -250,6 +250,30 @@ This library includes full TypeScript definitions and interfaces:
   validate.resetPasswordRequirements();
 
   validate.isValidPassword("testpassword*"); // false
+
+  // use badPasswords to prevent common or compromised passwords
+  validate.setPasswordRequirements({
+    upper: true,
+    lower: true,
+    number: true,
+    special: true,
+    min: 8,
+    max: 64,
+    badPasswords: ["password", "123456", "qwerty", "letmein", "admin"]
+  });
+
+  // password meets all requirements but is in the bad passwords list
+  validate.isValidPassword("Password1!"); // false (if "Password1!" is in badPasswords)
+  
+  // check if a password is in the bad list using validate.password()
+  const result = validate.password("password");
+  console.log(result.badPassword); // true
+
+  // badPasswords check is case-insensitive
+  validate.password("PASSWORD").badPassword; // true
+  validate.password("Password").badPassword; // true
+
+  validate.resetPasswordRequirements();
 ```
 
 ### Validate Custom Schema ###

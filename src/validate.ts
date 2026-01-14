@@ -24,6 +24,7 @@ interface IPasswordRequirements {
   requireSpecial: boolean;
   requireMinLength: number;
   requireMaxLength: number;
+  badPasswords: string[];
   setByUser: boolean;
 }
 
@@ -34,6 +35,7 @@ interface IPasswordRequirementsLazy {
     special?: boolean;
     min?: number;
     max?: number;
+    badPasswords?: string[];
 }
 
 
@@ -45,6 +47,7 @@ interface IPasswordResult {
   length: number;
   min: boolean;
   max: boolean;
+  badPassword: boolean;
 }
 
 export interface ISchemaValidationResult {
@@ -401,6 +404,19 @@ export function hasSpecial(str: string): boolean {
   return /[!-/]+|[:-@]+|[[-`]+|[{-~]/.test(str);
 }
 
+function hasBadPassword(str: string, badPasswords: string[]): boolean {
+    if (typeof str !== "string" || !Array.isArray(badPasswords) || badPasswords.length === 0) {
+        return false;
+    }
+    const lowerStr = str.toLowerCase();
+    for (let i = 0; i < badPasswords.length; i++) {
+        if (lowerStr === badPasswords[i].toLowerCase()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /**
 * An object representing the password requirements.
 * 
@@ -419,7 +435,8 @@ const passwordRequirements = {
   requireSpecial: false,
   requireMinLength: -1,
   requireMaxLength: -1,
-  setByUser: false
+  setByUser: false,
+  badPasswords: [] as string[]
 } as IPasswordRequirements;
 
 /**
@@ -459,6 +476,13 @@ export function setPasswordRequirements(obj: Partial<IPasswordRequirementsLazy>)
       return false;
   }
 
+  if (obj.badPasswords && Array.isArray(obj.badPasswords)) {
+    const filteredPasswords = obj.badPasswords.filter(p => typeof p === "string");
+    if (filteredPasswords.length > 0) {
+      passwordRequirements.badPasswords = filteredPasswords;
+    }
+  }
+
   passwordRequirements.setByUser = true;
   return true;
 }
@@ -474,6 +498,7 @@ export function resetPasswordRequirements(): void {
   passwordRequirements.requireMinLength = -1;
   passwordRequirements.requireMaxLength = -1;
   passwordRequirements.setByUser = false;
+  passwordRequirements.badPasswords = [];
 }
 
 /**
@@ -538,6 +563,9 @@ export function validatePassword(str: string, bRequireSpecial?: boolean, nMinLen
           ret.number = hasNumber(str);
       }
 
+      if (req.badPasswords && Array.isArray(req.badPasswords) && req.badPasswords.length > 0) {
+        ret.badPassword = hasBadPassword(str, req.badPasswords);
+      }
       return ret;
   }
 
@@ -598,6 +626,10 @@ export function isValidPassword(str: string, bRequireSpecial?: boolean, nMinLeng
   }
 
   if (typeof ret.max !== "undefined" && !ret.max) {
+      return false;
+  }
+
+  if (typeof ret.badPassword !== "undefined" && ret.badPassword) {
       return false;
   }
 

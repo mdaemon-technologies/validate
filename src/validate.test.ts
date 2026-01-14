@@ -506,6 +506,124 @@ describe("validate has method resetPasswordRequirements", () => {
   });
 });
 
+describe("validate password with badPasswords list", () => {
+  afterEach(() => {
+    resetPasswordRequirements();
+  });
+
+  it("detects passwords in the badPasswords list", () => {
+    setPasswordRequirements({ 
+      upper: false, 
+      lower: false, 
+      number: false, 
+      special: false,
+      badPasswords: ["password", "123456", "qwerty", "letmein"] 
+    });
+
+    const result = validate.password("password");
+    expect(result.badPassword).toBe(true);
+
+    const result2 = validate.password("123456");
+    expect(result2.badPassword).toBe(true);
+
+    const result3 = validate.password("securePassword123");
+    expect(result3.badPassword).toBe(false);
+  });
+
+  it("badPasswords check is case-insensitive", () => {
+    setPasswordRequirements({ 
+      upper: false, 
+      lower: false, 
+      number: false, 
+      special: false,
+      badPasswords: ["password", "qwerty"] 
+    });
+
+    expect(validate.password("PASSWORD").badPassword).toBe(true);
+    expect(validate.password("Password").badPassword).toBe(true);
+    expect(validate.password("QWERTY").badPassword).toBe(true);
+    expect(validate.password("QwErTy").badPassword).toBe(true);
+  });
+
+  it("isValidPassword returns false for passwords in the badPasswords list", () => {
+    setPasswordRequirements({ 
+      upper: false, 
+      lower: false, 
+      number: false, 
+      special: false,
+      badPasswords: ["password", "123456", "admin"] 
+    });
+
+    expect(isValidPassword("password")).toBe(false);
+    expect(isValidPassword("123456")).toBe(false);
+    expect(isValidPassword("admin")).toBe(false);
+    expect(isValidPassword("securepass")).toBe(true);
+  });
+
+  it("badPasswords list is reset when resetPasswordRequirements is called", () => {
+    setPasswordRequirements({ 
+      upper: false, 
+      lower: false, 
+      number: false, 
+      special: false,
+      badPasswords: ["password"] 
+    });
+
+    expect(validate.password("password").badPassword).toBe(true);
+
+    resetPasswordRequirements();
+
+    // After reset, badPassword should not be in the result
+    const result = validate.password("password");
+    expect(result.badPassword).toBeUndefined();
+  });
+
+  it("badPasswords works together with other password requirements", () => {
+    setPasswordRequirements({ 
+      upper: true, 
+      lower: true, 
+      number: true, 
+      special: true,
+      min: 8,
+      max: 20,
+      badPasswords: ["Password1!", "Admin123!"] 
+    });
+
+    // Valid password that meets all requirements but is in bad list
+    expect(isValidPassword("Password1!")).toBe(false);
+    expect(isValidPassword("Admin123!")).toBe(false);
+
+    // Valid password that meets all requirements and is not in bad list
+    expect(isValidPassword("SecurePass1!")).toBe(true);
+  });
+
+  it("empty badPasswords array does not affect validation", () => {
+    setPasswordRequirements({ 
+      upper: false, 
+      lower: false, 
+      number: false, 
+      special: false,
+      badPasswords: [] 
+    });
+
+    const result = validate.password("password");
+    expect(result.badPassword).toBeUndefined();
+  });
+
+  it("only string values in badPasswords array are used", () => {
+    setPasswordRequirements({ 
+      upper: false, 
+      lower: false, 
+      number: false, 
+      special: false,
+      badPasswords: ["password", 123 as any, null as any, "admin"] 
+    });
+
+    expect(validate.password("password").badPassword).toBe(true);
+    expect(validate.password("admin").badPassword).toBe(true);
+  });
+});
+
 describe("validate has method phoneNumber", () => {
   it("is a function", () => {
     expect(typeof validate.phoneNumber).toBe("function");
