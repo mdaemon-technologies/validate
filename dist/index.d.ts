@@ -64,8 +64,8 @@ export function hasUpperCase(str: string): boolean;
 export function hasLowerCase(str: string): boolean;
 export function hasNumber(str: string): boolean;
 export function hasSpecial(str: string): boolean;
-export function validatePassword(str: string, bRequireSpecial: boolean, nMinLength?: number, nMaxLength?: number): MDaemonValidPassword;
-export function isValidPassword(str: string, bRequireSpecial: boolean, nMinLength: number, nMaxLength: number): boolean;
+export function validatePassword(str: string, bRequireSpecial?: boolean, nMinLength?: number, nMaxLength?: number): MDaemonValidPassword;
+export function isValidPassword(str: string, bRequireSpecial?: boolean, nMinLength?: number, nMaxLength?: number): boolean;
 export function setPasswordRequirements(obj: Partial<MDaemonPasswordRequirements>): boolean;
 export function resetPasswordRequirements(): void;
 
@@ -110,8 +110,6 @@ export interface MDaemonValidate {
     resetPasswordRequirements: () => void;
 }
 
-declare namespace validate {
-    type ProtoType = MDaemonValidate;
-}
+declare const validate: MDaemonValidate;
 
 export default validate;
