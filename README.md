@@ -1,11 +1,11 @@
 [![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmdaemon-technologies%2Fvalidate%2Fmain%2Fpackage.json&query=%24.version&prefix=v&label=npm&color=blue)](https://www.npmjs.com/package/@mdaemon/validate) [![Static Badge](https://img.shields.io/badge/node-v18%2B-blue?style=flat&label=node&color=blue)](https://nodejs.org) [![install size](https://packagephobia.com/badge?p=@mdaemon/validate)](https://packagephobia.com/result?p=@mdaemon/validate) [![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmdaemon-technologies%2Fvalidate%2Fmain%2Fpackage.json&query=%24.license&prefix=v&label=license&color=green)](https://github.com/mdaemon-technologies/validate/blob/main/LICENSE) [![Node.js CI](https://github.com/mdaemon-technologies/validate/actions/workflows/node.js.yml/badge.svg)](https://github.com/mdaemon-technologies/validate/actions/workflows/node.js.yml)
 
-# @mdaemon/validate, A Dependency Free input validation library
+# @mdaemon/validate, A Zero Runtime Dependency input validation library
 [ [@mdaemon/validate on npm](https://www.npmjs.com/package/@mdaemon/validate "npm") ]
 
 The "validate" utility provides several validation methods, from domains to ipv6, and email to LDAP, and schema validation methods.
 
-> **Note:** As of version 3.0.0, this library has been converted to TypeScript for improved type safety and developer experience.
+> **Note:** As of version 3.0.0, this library has been converted to TypeScript for improved type safety and developer experience. While the source code uses TypeScript and requires dev dependencies (TypeScript, Rollup, Jest, etc.) for building and testing, the published package has **zero runtime dependencies**.
 
 # Install #
 
