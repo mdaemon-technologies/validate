@@ -24,8 +24,8 @@ import { validateDomain, validateEmailAddress } from "@mdaemon/validate";
 
 ## Node CommonJS
 ```javascript
-// Require the default export
-const validate = require("@mdaemon/validate/dist/validate.cjs");
+// Require the default export (note: .default is required due to named exports)
+const validate = require("@mdaemon/validate/dist/validate.cjs").default;
 
 // Destructuring specific functions
 const { validateDomain, validateEmailAddress } = require("@mdaemon/validate/dist/validate.cjs");
@@ -42,8 +42,11 @@ import { validateDomain, ISchema, ISchemaValidationResult } from "@mdaemon/valid
 ```html
 <script type="text/javascript" src="/path_to_modules/@mdaemon/validate/dist/validate.umd.js"></script>
 <script>
-  // Access via global variable
-  const isValid = validate.domain("example.com");
+  // Access via the default export on the global 'validate' object
+  const isValid = validate.default.domain("example.com");
+
+  // Or use the named exports directly
+  const isValidDomain = validate.validateDomain("example.com");
 </script>
 ```
 
