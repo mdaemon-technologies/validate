@@ -1,1 +1,2 @@
-declare module '@mdaemon/validate/dist/validate.umd.js';
+export { default } from './index';
+export * from './index';

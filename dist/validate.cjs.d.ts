@@ -1,1 +1,2 @@
-declare module '@mdaemon/validate/dist/validate.cjs';
+export { default } from './index';
+export * from './index';
