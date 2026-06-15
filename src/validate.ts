@@ -78,7 +78,7 @@ export interface ISchema {
  * @returns {boolean} True if str contains newline characters.
  */
 function hasBreaks(str: string): boolean {
-  return typeof str === "string" && /\u000d|\u000a/g.test(str);
+  return typeof str === "string" && /\u000d|\u000a/.test(str);
 }
 
 /**
@@ -89,7 +89,7 @@ function hasBreaks(str: string): boolean {
 * @returns {boolean} True if str contains control characters.
 */
 export function hasControlCharacters(str: string): boolean {
-  return (typeof str === "string" && /\u0008|\u000c|\u0009|\u000b/g.test(str)) || hasBreaks(str);
+  return typeof str === "string" && /[\u0000-\u001f\u007f]/.test(str);
 }
 
 /**
@@ -137,8 +137,14 @@ export function validateHeader(header: string): boolean {
 * @param {boolean} useWildCards - Whether to allow wildcard matching
 * @returns {boolean} True if the email is valid
 */
-export function validateEmailAddress(email: string, useWildCards: boolean): boolean {
+export function validateEmailAddress(email: string, useWildCards: boolean = false): boolean {
   if (typeof email !== "string") {
+      return false;
+  }
+
+  // Guard against pathological inputs before running the (backtracking-prone)
+  // regex. RFC 5321 caps an address at 254 characters.
+  if (email.length > 254) {
       return false;
   }
 
@@ -287,17 +293,21 @@ export function validateIPv6(ip: string): boolean {
 }
 
 /**
-* Validates if a given string value is an integer.
-* 
+* Validates if a given string consists solely of ASCII digits (0-9).
+*
+* Note: this is a non-negative, digits-only check. Leading zeros (e.g. "007")
+* are accepted and a leading minus sign (e.g. "-5") is rejected; it does not
+* validate the numeric range of a true integer.
+*
 * @param {string} value - The string value to validate.
-* @returns {boolean} True if the string is a valid integer, false otherwise.
+* @returns {boolean} True if the string is one or more ASCII digits, false otherwise.
 */
 export function validateInt(value: string): boolean {
   if (typeof value !== "string" || value.length < 1) {
       return false;
   }
 
-  return /^\d*$/.test(value);
+  return /^\d+$/.test(value);
 }
 
 /**
@@ -451,27 +461,32 @@ const passwordRequirements = {
 * @returns {boolean} True if requirements were set successfully, false otherwise.
 */
 export function setPasswordRequirements(obj: Partial<IPasswordRequirementsLazy>): boolean {
+  // Resolve everything into locals first so that a validation failure leaves
+  // the existing requirements untouched instead of committing a partial,
+  // inconsistent state.
+  const next: IPasswordRequirements = Object.assign({}, passwordRequirements);
+
   if (typeof obj.upper !== "undefined") {
-      passwordRequirements.requireUpper = !!obj.upper;
+      next.requireUpper = !!obj.upper;
   }
   if (typeof obj.lower !== "undefined") {
-      passwordRequirements.requireLower = !!obj.lower;
+      next.requireLower = !!obj.lower;
   }
   if (typeof obj.special !== "undefined") {
-      passwordRequirements.requireSpecial = !!obj.special;
+      next.requireSpecial = !!obj.special;
   }
   if (typeof obj.number !== "undefined") {
-      passwordRequirements.requireNumber = !!obj.number;
+      next.requireNumber = !!obj.number;
   }
   if (typeof obj.min === "number" && obj.min > 0) {
-      passwordRequirements.requireMinLength = obj.min;
+      next.requireMinLength = obj.min;
   }
   if (typeof obj.max === "number" && obj.max > 0) {
-      passwordRequirements.requireMaxLength = obj.max;
+      next.requireMaxLength = obj.max;
   }
 
-  if (passwordRequirements.requireMaxLength > 0 && passwordRequirements.requireMinLength > 0 && 
-      passwordRequirements.requireMaxLength <= passwordRequirements.requireMinLength) {
+  if (next.requireMaxLength > 0 && next.requireMinLength > 0 &&
+      next.requireMaxLength <= next.requireMinLength) {
       console.error("The minimum password length requirement must be less than the maximum password length requirement");
       return false;
   }
@@ -479,11 +494,12 @@ export function setPasswordRequirements(obj: Partial<IPasswordRequirementsLazy>)
   if (obj.badPasswords && Array.isArray(obj.badPasswords)) {
     const filteredPasswords = obj.badPasswords.filter(p => typeof p === "string");
     if (filteredPasswords.length > 0) {
-      passwordRequirements.badPasswords = filteredPasswords;
+      next.badPasswords = filteredPasswords;
     }
   }
 
-  passwordRequirements.setByUser = true;
+  next.setByUser = true;
+  Object.assign(passwordRequirements, next);
   return true;
 }
 
@@ -532,7 +548,7 @@ export function validatePassword(str: string, bRequireSpecial?: boolean, nMinLen
   }
 
   if (passwordRequirements.setByUser) {
-      let req = Object.assign(passwordRequirements);
+      const req = passwordRequirements;
       if ((req.requireSpecial && typeof bRequireSpecial === "undefined") || bRequireSpecial) {
           ret.special = hasSpecial(str);
       }
@@ -711,21 +727,27 @@ function validateSchema(schema: ISchema, value: any, depth: number = 0): ISchema
       errors: []
   };
 
-  if (schema.type) {
-      const valueType = typeof value;
+  // An absent value (undefined) is only objectionable when the schema is
+  // required (handled below), so optional properties may legitimately be
+  // omitted. An explicit null, by contrast, is a real value and is type-checked
+  // like any other - but is never recursed into, so it cannot crash.
+  if (schema.type && value !== undefined) {
+      const isArray = Array.isArray(value);
+      const isNull = value === null;
+      const valueType = isNull ? "null" : (isArray ? "array" : typeof value);
       if (schema.type === "number" && valueType !== "number") {
           result.valid = false;
           result.errors.push(`Expected number, got ${valueType}`);
-      } 
+      }
       else if (schema.type === "string" && valueType !== "string") {
           result.valid = false;
           result.errors.push(`Expected string, got ${valueType}`);
-      } 
+      }
       else if (schema.type === "boolean" && valueType !== "boolean") {
           result.valid = false;
           result.errors.push(`Expected boolean, got ${valueType}`);
       }
-      else if (schema.type === "array" && !Array.isArray(value)) {
+      else if (schema.type === "array" && !isArray) {
           result.valid = false;
           result.errors.push(`Expected array, got ${valueType}`);
       }
@@ -734,9 +756,9 @@ function validateSchema(schema: ISchema, value: any, depth: number = 0): ISchema
           result.errors.push(`Expected object, got ${valueType}`);
       }
 
-      if (schema.type === "array" && Array.isArray(value)) {
+      if (schema.type === "array" && isArray) {
           if (typeof schema.arraySchema === "object" && depth < 10) {
-              value.forEach((item, index) => {
+              value.forEach((item: any, index: number) => {
                   const itemResult = validateSchema(schema.arraySchema!, item, depth + 1);
                   if (!itemResult.valid) {
                       result.valid = false;
@@ -819,6 +841,10 @@ function validateSchema(schema: ISchema, value: any, depth: number = 0): ISchema
 function getSchemaValidatorFunction(name: string): (input: any) => ISchemaValidationResult {
   return (input: any): ISchemaValidationResult => {
       const schema = schemas.get(name);
+      if (!schema || typeof schema !== "object") {
+          return { valid: false, errors: [`No schema registered for "${name}"`] };
+      }
+
       const results: string[] = [];
 
       const result = validateSchema(schema, input);

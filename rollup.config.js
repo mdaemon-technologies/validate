@@ -14,7 +14,7 @@ export default [
 			{ file: pkg.module, format: 'es',	exports: 'named', name: 'validate' }
 		],
 		plugins: [
-			typescript(),
+			typescript({ tsconfig: './tsconfig.build.json' }),
 			terser()
 		]
 	},

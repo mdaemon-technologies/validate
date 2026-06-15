@@ -1015,4 +1015,116 @@ describe("validate schema functionality", () => {
       ]
     }).valid).toBe(false);
   });
+
+  it("treats absent optional typed properties as valid (H1)", () => {
+    const validator = createSchemaValidator("optionalProps", {
+      type: "object",
+      properties: {
+        name: { type: "string", required: true },
+        age: { type: "number" },
+        address: {
+          type: "object",
+          properties: {
+            street: { type: "string", required: true }
+          }
+        },
+        tags: { type: "array", arraySchema: { type: "string" } }
+      }
+    });
+
+    // Only the required field is present; optional fields omitted -> valid
+    const result = validator({ name: "Bob" });
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+
+    // A present-but-wrong optional field still fails
+    expect(validator({ name: "Bob", age: "not-a-number" }).valid).toBe(false);
+  });
+
+  it("does not crash on null values and rejects them when required (H2)", () => {
+    const validator = createSchemaValidator("nullSafe", {
+      type: "object",
+      properties: {
+        user: {
+          type: "object",
+          required: true,
+          properties: { name: { type: "string" } }
+        }
+      }
+    });
+
+    // null for a required object -> invalid, but must not throw
+    let res!: ReturnType<typeof validator>;
+    expect(() => { res = validator({ user: null }); }).not.toThrow();
+    expect(res.valid).toBe(false);
+
+    // top-level null must not throw either
+    expect(() => validator(null)).not.toThrow();
+    expect(validator(null).valid).toBe(false);
+  });
+
+  it("rejects arrays where an object is expected (H3)", () => {
+    const validator = createSchemaValidator("noArrayAsObject", {
+      type: "object",
+      properties: {
+        meta: { type: "object", properties: { id: { type: "string" } } }
+      }
+    });
+
+    expect(validator({ meta: [1, 2, 3] }).valid).toBe(false);
+    expect(validator({ meta: { id: "x" } }).valid).toBe(true);
+  });
+
+  it("getSchema returns undefined (no throw) for an unknown schema name (L3)", () => {
+    expect(() => getSchema("definitely-not-registered")).not.toThrow();
+    expect(getSchema("definitely-not-registered")).toBeUndefined();
+  });
+});
+
+describe("setPasswordRequirements atomicity (M1)", () => {
+  afterEach(() => {
+    resetPasswordRequirements();
+  });
+
+  it("leaves existing requirements untouched when min/max validation fails", () => {
+    expect(setPasswordRequirements({
+      upper: false, lower: false, number: false, special: false, min: 4, max: 20
+    })).toBe(true);
+
+    // A 5-char password is valid under the committed min:4/max:20 rules
+    expect(isValidPassword("12345")).toBe(true);
+
+    // This call is invalid (max 20 <= min 30) and must be rejected
+    expect(setPasswordRequirements({ min: 30 })).toBe(false);
+
+    // State must be unchanged: the 5-char password is still valid
+    expect(isValidPassword("12345")).toBe(true);
+  });
+});
+
+describe("hasControlCharacters covers the full control range (M2)", () => {
+  it("detects NUL and other C0 / DEL control characters", () => {
+    expect(hasControlCharacters(String.fromCharCode(0))).toBe(true);   // NUL
+    expect(hasControlCharacters(String.fromCharCode(1))).toBe(true);   // SOH
+    expect(hasControlCharacters(String.fromCharCode(0x1f))).toBe(true); // US
+    expect(hasControlCharacters(String.fromCharCode(0x7f))).toBe(true); // DEL
+    expect(hasControlCharacters("normal value")).toBe(false);
+  });
+
+  it("rejects header values containing a NUL byte", () => {
+    expect(validateHeaderValue("foo" + String.fromCharCode(0) + "bar")).toBe(false);
+    expect(validateHeaderValue("foobar")).toBe(true);
+  });
+});
+
+describe("validateEmailAddress length guard (M3)", () => {
+  it("rejects addresses longer than 254 characters without hanging", () => {
+    const huge = "a".repeat(250) + "@x.com";
+    expect(huge.length).toBeGreaterThan(254);
+    expect(validateEmailAddress(huge, false)).toBe(false);
+  });
+
+  it("still validates normal addresses and defaults useWildCards to false", () => {
+    expect(validateEmailAddress("user@example.com")).toBe(true);
+  });
 });
