@@ -1,6 +1,6 @@
 {
   "name": "@mdaemon/validate",
-  "version": "3.4.0",
+  "version": "3.5.0",
   "type": "module",
   "description": "A validation library used by MDaemon Remote Administration",
   "main": "dist/validate.umd.js",
@@ -38,10 +38,11 @@
     "@rollup/plugin-terser": "^1.0.0",
     "@rollup/plugin-typescript": "^12.3.0",
     "@types/jest": "^29.5.14",
+    "@types/node": "^20.19.43",
     "jest": "^29.7.0",
     "rollup": "^4.40.0",
+    "rollup-plugin-dts": "^6.5.1",
     "ts-jest": "^29.4.11",
-    "ts-node": "^10.9.2",
     "tslib": "^2.8.1",
     "typescript": "^6.0.3"
   },
@@ -53,11 +54,20 @@
   ],
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/validate.mjs",
-      "require": "./dist/validate.cjs",
-      "default": "./dist/validate.umd.js"
-    }
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/validate.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/validate.cjs"
+      },
+      "default": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/validate.umd.js"
+      }
+    },
+    "./package.json": "./package.json"
   },
   "keywords": [
     "validation",

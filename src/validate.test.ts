@@ -268,25 +268,6 @@ describe("validate has method ip", () => {
   });
 });
 
-describe("validate has method ip", () => {
-  it("is a function", () => {
-    expect(typeof validate.ip).toBe("function");
-  });
-
-  it("validates IPv4 and IPv6 addresses", () => {
-    expect(validate.ip("::1", false)).toBe(true);
-    expect(validate.ip("1.1.1.1", false)).toBe(true);
-    expect(validate.ip("1.1.1.1/16", false)).toBe(true);
-    expect(validate.ip("fe80::500b:59e9:351:fbf3", false)).toBe(true);
-    expect(validate.ip("fe80::500b:59e9:351:fbf3/29", false)).toBe(true);
-  });
-
-  it("validateIPAddress is an alias for validate.ip", () => {
-    expect(typeof validateIPAddress).toBe("function");
-    expect(validateIPAddress).toBe(validate.ip);
-  });
-});
-
 describe("validate has method ipv4", () => {
   it("is a function", () => {
     expect(typeof validate.ipv4).toBe("function");
@@ -450,6 +431,10 @@ describe("validate has method isValidPassword", () => {
 });
 
 describe("validate has method setPasswordRequirements", () => {
+  afterEach(() => {
+    resetPasswordRequirements();
+  });
+
   it("is a function", () => {
     expect(typeof validate.setPasswordRequirements).toBe("function");
   });
@@ -487,6 +472,10 @@ describe("validate has method setPasswordRequirements", () => {
 });
 
 describe("validate has method resetPasswordRequirements", () => {
+  afterEach(() => {
+    resetPasswordRequirements();
+  });
+
   it("is a function", () => {
     expect(typeof validate.resetPasswordRequirements).toBe("function");
   });
