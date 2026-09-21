@@ -1,22 +1,30 @@
-[![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmdaemon-technologies%2Fvalidate%2Fmain%2Fpackage.json&query=%24.version&prefix=v&label=npm&color=blue)](https://www.npmjs.com/package/@mdaemon/validate) [![Static Badge](https://img.shields.io/badge/node-v18%2B-blue?style=flat&label=node&color=blue)](https://nodejs.org) [![install size](https://packagephobia.com/badge?p=@mdaemon/validate)](https://packagephobia.com/result?p=@mdaemon/validate) [![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmdaemon-technologies%2Fvalidate%2Fmain%2Fpackage.json&query=%24.license&prefix=v&label=license&color=green)](https://github.com/mdaemon-technologies/validate/blob/main/LICENSE) [![Node.js CI](https://github.com/mdaemon-technologies/validate/actions/workflows/node.js.yml/badge.svg)](https://github.com/mdaemon-technologies/validate/actions/workflows/node.js.yml)
+# @mdaemon/validate
 
-# @mdaemon/validate, A Zero Runtime Dependency input validation library
-[ [@mdaemon/validate on npm](https://www.npmjs.com/package/@mdaemon/validate "npm") ]
+[![npm](https://img.shields.io/npm/v/@mdaemon/validate?color=blue)](https://www.npmjs.com/package/@mdaemon/validate)
+[![license](https://img.shields.io/npm/l/@mdaemon/validate?color=green)](LICENSE)
+[![node](https://img.shields.io/node/v/@mdaemon/validate)](https://nodejs.org)
+[![install size](https://packagephobia.com/badge?p=@mdaemon/validate)](https://packagephobia.com/result?p=@mdaemon/validate)
+[![CI](https://github.com/mdaemon-technologies/validate/actions/workflows/node.js.yml/badge.svg)](https://github.com/mdaemon-technologies/validate/actions/workflows/node.js.yml)
 
-The "validate" utility provides several validation methods, from domains to ipv6, and email to LDAP, and schema validation methods.
+A validation library used by MDaemon Remote Administration
 
-> **Note:** As of version 3.0.0, this library has been converted to TypeScript for improved type safety and developer experience. While the source code uses TypeScript and requires dev dependencies (TypeScript, Rollup, Jest, etc.) for building and testing, the published package has **zero runtime dependencies**.
+A zero runtime dependency input validation library. The "validate" utility provides several validation methods, from domains to ipv6, and email to LDAP, and schema validation methods.
 
 The validators never throw on bad input: a value of the wrong type (`null`, a number, and so on) returns `false`.
 
-# Install #
+## Install
 
-	  $ npm install @mdaemon/validate --save
+```bash
+npm install @mdaemon/validate
+```
 
-# Import / Require #
+## Usage
 
-## Node ESM (Recommended)
-```javascript
+### ES modules
+
+Recommended for Node.
+
+```js
 // Import the default export
 import validate from "@mdaemon/validate";
 
@@ -24,8 +32,9 @@ import validate from "@mdaemon/validate";
 import { validateDomain, validateEmailAddress } from "@mdaemon/validate";
 ```
 
-## Node CommonJS
-```javascript
+### CommonJS
+
+```js
 // Require the default export (note: .default is required due to named exports)
 const validate = require("@mdaemon/validate").default;
 
@@ -35,15 +44,8 @@ const { validateDomain, validateEmailAddress } = require("@mdaemon/validate");
 
 Only the package root (and `@mdaemon/validate/package.json`) can be imported; deep paths such as `@mdaemon/validate/dist/validate.cjs` are blocked by the package's `exports` map.
 
-## TypeScript
-```typescript
-// Import with full TypeScript support
-import validate from "@mdaemon/validate";
-import { validateDomain } from "@mdaemon/validate";
-import type { ISchema, ISchemaValidationResult, MDaemonValidPassword } from "@mdaemon/validate";
-```
+### Browser (UMD)
 
-## Browser/Web
 ```html
 <script type="text/javascript" src="/path_to_modules/@mdaemon/validate/dist/validate.umd.js"></script>
 <script>
@@ -55,7 +57,16 @@ import type { ISchema, ISchemaValidationResult, MDaemonValidPassword } from "@md
 </script>
 ```
 
-# TypeScript Support
+### TypeScript
+
+```ts
+// Import with full TypeScript support
+import validate from "@mdaemon/validate";
+import { validateDomain } from "@mdaemon/validate";
+import type { ISchema, ISchemaValidationResult, MDaemonValidPassword } from "@mdaemon/validate";
+```
+
+## TypeScript Support
 
 The package ships its own type declarations, for both ES module (`import`) and CommonJS (`require`) consumers. It exports these types:
 
@@ -65,7 +76,7 @@ The package ships its own type declarations, for both ES module (`import`) and C
 - `MDaemonValidPassword` - The result of `password` / `validatePassword`. Once password requirements are set, only the checks being enforced are present at runtime, so test a field with `=== false`.
 - `MDaemonValidate` - The default `validate` object
 
-# Wildcards #
+## Wildcards
 
 The `domain`, `email`, `ip` and `windowsPath` validators accept wildcard patterns when their `useWildCards` argument is `true`:
 
@@ -75,270 +86,270 @@ The `domain`, `email`, `ip` and `windowsPath` validators accept wildcard pattern
 
 A pattern is checked for its shape, so it must still be able to match something: an IPv4 pattern needs four octets, and a domain pattern needs two or more labels.
 
-### Validate domain syntax ###
+### Validate domain syntax
 
-```javascript
-    validate.domain("mdaemon.com"); // true
-    validate.domain("mail.mdaemon.com."); // true (a trailing root dot is allowed)
-    validate.domain("mdaemon"); // false (at least two labels are required)
-    validate.domain("-mdaemon.com"); // false (labels cannot start or end with a hyphen)
-    validate.domain("mdaemon..com"); // false (labels cannot be empty)
+```js
+validate.domain("mdaemon.com"); // true
+validate.domain("mail.mdaemon.com."); // true (a trailing root dot is allowed)
+validate.domain("mdaemon"); // false (at least two labels are required)
+validate.domain("-mdaemon.com"); // false (labels cannot start or end with a hyphen)
+validate.domain("mdaemon..com"); // false (labels cannot be empty)
 
-    // use wild cards
-    validate.domain("mdaemon.*", true); // true
-    validate.domain("*.mdaemon.com", true); // true
+// use wild cards
+validate.domain("mdaemon.*", true); // true
+validate.domain("*.mdaemon.com", true); // true
 ```
 
 Each label is 1-63 letters, digits and inner hyphens, and the whole name is at most 253 characters.
 
-### Validate email address syntax ###
+### Validate email address syntax
 
-```javascript
-    validate.email("tommy@mdaemon.com"); // true
-    validate.email("tommy.com"); // false
+```js
+validate.email("tommy@mdaemon.com"); // true
+validate.email("tommy.com"); // false
 
-    // use wild cards * or ?
-    validate.email("*@mdaemon???", true); // true
-    validate.email("*@*.mdaemon.com", true); // true
-    validate.email("<script>@x*", true); // false
+// use wild cards * or ?
+validate.email("*@mdaemon???", true); // true
+validate.email("*@*.mdaemon.com", true); // true
+validate.email("<script>@x*", true); // false
 ```
 
 Addresses longer than 254 characters are rejected.
 
-### Validate ipv4 and ipv6 address syntax ###
+### Validate ipv4 and ipv6 address syntax
 
-```javascript
-    validate.ip("2001:0db8:85a3:0000:0000:8a2e:0370:7334"); // true
-    validate.ip("::"); // true
-    validate.ip("192.168.0.0/16"); // true (CIDR prefix lengths are allowed)
-    validate.ip("fe80::1%eth0"); // true (IPv6 zone IDs are allowed)
-    validate.ip("2001:db8::/129"); // false (IPv6 prefix lengths are 0-128)
-    validate.ip("10"); // false
+```js
+validate.ip("2001:0db8:85a3:0000:0000:8a2e:0370:7334"); // true
+validate.ip("::"); // true
+validate.ip("192.168.0.0/16"); // true (CIDR prefix lengths are allowed)
+validate.ip("fe80::1%eth0"); // true (IPv6 zone IDs are allowed)
+validate.ip("2001:db8::/129"); // false (IPv6 prefix lengths are 0-128)
+validate.ip("10"); // false
 
-    // use wild cards * or ? or #
-    validate.ip("10.*.*.###", true); // true
-    validate.ip("192.168.?.1", true); // true
-    validate.ip("10.*.*.*/8", true); // true
-    validate.ip("fe80::*", true); // true
-    validate.ip("evil.example.com.*", true); // false
+// use wild cards * or ? or #
+validate.ip("10.*.*.###", true); // true
+validate.ip("192.168.?.1", true); // true
+validate.ip("10.*.*.*/8", true); // true
+validate.ip("fe80::*", true); // true
+validate.ip("evil.example.com.*", true); // false
 
-    validate.ipv4("2001:0db8:85a3:0000:0000:8a2e:0370:7334"); // false
-    validate.ipv4("10.10.50.1"); // true
+validate.ipv4("2001:0db8:85a3:0000:0000:8a2e:0370:7334"); // false
+validate.ipv4("10.10.50.1"); // true
 
-    validate.ipv6("2001:0db8:85a3:0000:0000:8a2e:0370:7334"); // true
-    validate.ipv6("::ffff:10.10.50.1"); // true (IPv4-mapped IPv6)
-    validate.ipv6("10.10.50.1"); // false
+validate.ipv6("2001:0db8:85a3:0000:0000:8a2e:0370:7334"); // true
+validate.ipv6("::ffff:10.10.50.1"); // true (IPv4-mapped IPv6)
+validate.ipv6("10.10.50.1"); // false
 ```
 
-### Validate LDAP DN syntax ###
+### Validate LDAP DN syntax
 
-```javascript
-    validate.ldapDN("CN=test,OU=test,DC=test"); // true
-    validate.ldapDN("uid=john,ou=Group,dc=mdaemon,dc=com"); // true
-    validate.ldapDN("test"); // false
+```js
+validate.ldapDN("CN=test,OU=test,DC=test"); // true
+validate.ldapDN("uid=john,ou=Group,dc=mdaemon,dc=com"); // true
+validate.ldapDN("test"); // false
 ```
 
-### Validate windows file name ###
+### Validate windows file name
 
-```javascript
-    validate.windowsFileName("test.txt"); // true
-    validate.windowsFileName("~test.txt"); // true
-    validate.windowsFileName("test?.txt"); // false (" * : < > ? / \ | are not allowed)
-    validate.windowsFileName("test\t.txt"); // false (control characters are not allowed)
+```js
+validate.windowsFileName("test.txt"); // true
+validate.windowsFileName("~test.txt"); // true
+validate.windowsFileName("test?.txt"); // false (" * : < > ? / \ | are not allowed)
+validate.windowsFileName("test\t.txt"); // false (control characters are not allowed)
 ```
 
-### Validate windows path ###
+### Validate windows path
 
-```javascript
-    validate.windowsPath("C:\\test\\this\\path"); // true
-    validate.windowsPath("\\\\server\\share\\file.txt"); // true
-    validate.windowsPath("C:\\test\n"); // false
-    validate.windowsPath("C:\\test\\"); // false (no trailing separator)
-    validate.windowsPath("C:\\ \\test"); // false (a folder name cannot be only spaces)
+```js
+validate.windowsPath("C:\\test\\this\\path"); // true
+validate.windowsPath("\\\\server\\share\\file.txt"); // true
+validate.windowsPath("C:\\test\n"); // false
+validate.windowsPath("C:\\test\\"); // false (no trailing separator)
+validate.windowsPath("C:\\ \\test"); // false (a folder name cannot be only spaces)
 
-    // use wild cards
-    validate.windowsPath("C:\\*", true); // true
-    validate.windowsPath("C:\\logs\\*.log", true); // true
+// use wild cards
+validate.windowsPath("C:\\*", true); // true
+validate.windowsPath("C:\\logs\\*.log", true); // true
 ```
 
-### Validate value is an int as opposed to a float ###
+### Validate value is an int as opposed to a float
 
-```javascript
-    validate.isInt("1"); // true
-    validate.isInt("1.1"); // false
-    validate.isInt("007"); // true (digits only; leading zeros are allowed)
-    validate.isInt("-5"); // false
+```js
+validate.isInt("1"); // true
+validate.isInt("1.1"); // false
+validate.isInt("007"); // true (digits only; leading zeros are allowed)
+validate.isInt("-5"); // false
 ```
 
-### Validate HTTP headers ###
+### Validate HTTP headers
 
-```javascript
-    validate.headerName("X-Test-Name"); // true
-    validate.headerName("Content-MD5"); // true
-    validate.headerName("X=Test=Name"); // false
-    validate.headerName("-X-Test"); // false
+```js
+validate.headerName("X-Test-Name"); // true
+validate.headerName("Content-MD5"); // true
+validate.headerName("X=Test=Name"); // false
+validate.headerName("-X-Test"); // false
 
-    validate.headerValue("1"); // true
-    validate.headerValue("default-src 'self' example.com *.example.com"); // true
-    validate.headerValue("default-src 'self' \n"); // false
+validate.headerValue("1"); // true
+validate.headerValue("default-src 'self' example.com *.example.com"); // true
+validate.headerValue("default-src 'self' \n"); // false
 
-    validate.header("Content-Security-Policy: default-src 'self'"); // true
-    validate.header("X-Frame-Options"); // false
+validate.header("Content-Security-Policy: default-src 'self'"); // true
+validate.header("X-Frame-Options"); // false
 ```
 
-### Validate phone number syntax ###
+### Validate phone number syntax
 
-```javascript
-    validate.phoneNumber("+1 (832) 526-7777"); // true
-    validate.phoneNumber("+18325267777"); // true
-    validate.phoneNumber("((((("); // false (at least five digits are required)
-    validate.phoneNumber("555"); // false
+```js
+validate.phoneNumber("+1 (832) 526-7777"); // true
+validate.phoneNumber("+18325267777"); // true
+validate.phoneNumber("((((("); // false (at least five digits are required)
+validate.phoneNumber("555"); // false
 ```
 
-### Check for control characters ###
+### Check for control characters
 
-```javascript
-    // any C0 control character (U+0000-U+001F) or DEL (U+007F)
-    validate.hasControlCharacters("line one\nline two"); // true
-    validate.hasControlCharacters("plain text"); // false
+```js
+// any C0 control character (U+0000-U+001F) or DEL (U+007F)
+validate.hasControlCharacters("line one\nline two"); // true
+validate.hasControlCharacters("plain text"); // false
 ```
 
-### Validate password requirements ###
+### Validate password requirements
 
-```javascript
-    // do not require special characters
-    validate.password("Test this Password1");
-    /*
-        {
-            special: true,
-            lower: true,
-            upper: true,
-            number: true,
-            length: 19
-        }
-    */
+```js
+// do not require special characters
+validate.password("Test this Password1");
+/*
+    {
+        special: true,
+        lower: true,
+        upper: true,
+        number: true,
+        length: 19
+    }
+*/
 
-    // require special characters
-    validate.password("test this one1", true);
-    /*
-        {
-            special: false,
-            lower: true,
-            upper: false,
-            number: true,
-            length: 14
-        }
-    */
+// require special characters
+validate.password("test this one1", true);
+/*
+    {
+        special: false,
+        lower: true,
+        upper: false,
+        number: true,
+        length: 14
+    }
+*/
 
-    // include a minimum (and/or maximum) length
-    validate.password("Test1", false, 8);
-    /*
-        {
-            special: true,
-            lower: true,
-            upper: true,
-            number: true,
-            length: 5,
-            min: false
-        }
-    */
+// include a minimum (and/or maximum) length
+validate.password("Test1", false, 8);
+/*
+    {
+        special: true,
+        lower: true,
+        upper: true,
+        number: true,
+        length: 5,
+        min: false
+    }
+*/
 
-    // validate each part individually
-    validate.hasLowerCase("Test Password@1"); // true
-    validate.hasLowerCase("TEST PASSWORD"); // false
+// validate each part individually
+validate.hasLowerCase("Test Password@1"); // true
+validate.hasLowerCase("TEST PASSWORD"); // false
 
-    validate.hasUpperCase("Test Password@1"); // true
-    validate.hasUpperCase("test password"); // false
+validate.hasUpperCase("Test Password@1"); // true
+validate.hasUpperCase("test password"); // false
 
-    validate.hasNumber("Test Password@1"); // true
-    validate.hasNumber("test password"); // false
+validate.hasNumber("Test Password@1"); // true
+validate.hasNumber("test password"); // false
 
-    validate.hasSpecial("Test Password@1"); // true
-    validate.hasSpecial("test password1"); // false
+validate.hasSpecial("Test Password@1"); // true
+validate.hasSpecial("test password1"); // false
 
-    // by default a valid password needs upper case, lower case and a number
-    validate.isValidPassword("TestPassword1"); // true
+// by default a valid password needs upper case, lower case and a number
+validate.isValidPassword("TestPassword1"); // true
 
-    // include bRequireSpecial
-    validate.isValidPassword("TestPassword1", true); // false
+// include bRequireSpecial
+validate.isValidPassword("TestPassword1", true); // false
 
-    // include min and max length of the password, or just min length
-    validate.isValidPassword("TestPassword1*", true, 4, 20); // true
+// include min and max length of the password, or just min length
+validate.isValidPassword("TestPassword1*", true, 4, 20); // true
 
-    // a min or max length below 1 means "no limit"
-    validate.isValidPassword("TestPassword1", false, 0, 0); // true
+// a min or max length below 1 means "no limit"
+validate.isValidPassword("TestPassword1", false, 0, 0); // true
 ```
 
 `setPasswordRequirements` replaces the default rules. Once it has been called, **only** the requirements you enable are enforced (the default upper case / lower case / number rule no longer applies) until `resetPasswordRequirements` is called. It returns `false`, and changes nothing, when `min` is not less than `max` or when the argument is not an object. Values of `min` and `max` below 1 are ignored.
 
-```javascript
-    validate.setPasswordRequirements({
-      upper: true,
-      lower: true,
-      number: false,
-      special: true,
-      min: 6,
-      max: 16
-    }); // true
+```js
+validate.setPasswordRequirements({
+  upper: true,
+  lower: true,
+  number: false,
+  special: true,
+  min: 6,
+  max: 16
+}); // true
 
-    validate.isValidPassword("TestPassword*"); // true
+validate.isValidPassword("TestPassword*"); // true
 
-    // once requirements are set, the result only contains the checks being enforced
-    validate.password("TestPassword*");
-    /*
-        {
-            length: 13,
-            special: true,
-            lower: true,
-            upper: true,
-            min: true,
-            max: true
-        }
-    */
+// once requirements are set, the result only contains the checks being enforced
+validate.password("TestPassword*");
+/*
+    {
+        length: 13,
+        special: true,
+        lower: true,
+        upper: true,
+        min: true,
+        max: true
+    }
+*/
 
-    // settings not passed are kept
-    validate.setPasswordRequirements({ upper: false }); // true
+// settings not passed are kept
+validate.setPasswordRequirements({ upper: false }); // true
 
-    // min must stay less than max (16), so this is rejected and nothing changes
-    validate.setPasswordRequirements({ min: 20 }); // false
+// min must stay less than max (16), so this is rejected and nothing changes
+validate.setPasswordRequirements({ min: 20 }); // false
 
-    // you can override the requirements for special, min length, and max length
-    validate.isValidPassword("testpassword", false); // true
+// you can override the requirements for special, min length, and max length
+validate.isValidPassword("testpassword", false); // true
 
-    validate.resetPasswordRequirements();
+validate.resetPasswordRequirements();
 
-    validate.isValidPassword("testpassword*"); // false
+validate.isValidPassword("testpassword*"); // false
 
-    // only the enabled requirements apply, so this drops the default upper/lower/number rule
-    validate.setPasswordRequirements({ min: 8 });
-    validate.isValidPassword("aaaaaaaa"); // true
+// only the enabled requirements apply, so this drops the default upper/lower/number rule
+validate.setPasswordRequirements({ min: 8 });
+validate.isValidPassword("aaaaaaaa"); // true
 
-    validate.resetPasswordRequirements();
+validate.resetPasswordRequirements();
 
-    // use badPasswords to prevent common or compromised passwords
-    validate.setPasswordRequirements({
-      upper: true,
-      lower: true,
-      number: true,
-      special: true,
-      min: 8,
-      max: 64,
-      badPasswords: ["password1!", "123456", "qwerty", "letmein", "admin"]
-    });
+// use badPasswords to prevent common or compromised passwords
+validate.setPasswordRequirements({
+  upper: true,
+  lower: true,
+  number: true,
+  special: true,
+  min: 8,
+  max: 64,
+  badPasswords: ["password1!", "123456", "qwerty", "letmein", "admin"]
+});
 
-    // meets every requirement, but is in the bad passwords list (compared case-insensitively)
-    validate.isValidPassword("Password1!"); // false
-    validate.password("Password1!").badPassword; // true
-    validate.password("PASSWORD1!").badPassword; // true
+// meets every requirement, but is in the bad passwords list (compared case-insensitively)
+validate.isValidPassword("Password1!"); // false
+validate.password("Password1!").badPassword; // true
+validate.password("PASSWORD1!").badPassword; // true
 
-    // an empty list clears the bad passwords
-    validate.setPasswordRequirements({ badPasswords: [] });
-    validate.isValidPassword("Password1!"); // true
+// an empty list clears the bad passwords
+validate.setPasswordRequirements({ badPasswords: [] });
+validate.isValidPassword("Password1!"); // true
 
-    validate.resetPasswordRequirements();
+validate.resetPasswordRequirements();
 ```
 
-### Validate Custom Schema ###
+### Validate Custom Schema
 
 `createSchemaValidator(name, schema)` registers a schema under a name and returns a validator function. The validator returns `{ valid, errors }`, where `errors` is an array of strings. Errors for nested values are prefixed with the property name (`"name: "`) or the array index (`"[0]: "`).
 
@@ -348,154 +359,157 @@ A schema supports `type` (`"string"`, `"number"`, `"boolean"`, `"array"` or `"ob
 - `null` is a real value: it fails a `type` check, and a required `null` is reported as `"Value is required"`.
 - Arrays do not satisfy `type: "object"`.
 
-```javascript
-    const userSchema = {
-      type: "object",
-      properties: {
-        name: { type: "string", required: true, minLength: 2 },
-        age: { type: "number", minimum: 0, maximum: 120 },
-        email: { type: "string", required: true }
-      }
-    };
+```js
+const userSchema = {
+  type: "object",
+  properties: {
+    name: { type: "string", required: true, minLength: 2 },
+    age: { type: "number", minimum: 0, maximum: 120 },
+    email: { type: "string", required: true }
+  }
+};
 
-    // Create a validator function for the schema
-    const validateUser = validate.createSchemaValidator("user", userSchema);
+// Create a validator function for the schema
+const validateUser = validate.createSchemaValidator("user", userSchema);
 
-    // Validate an object against the schema
-    validateUser({ name: "John", age: 30, email: "john@example.com" }); // { valid: true, errors: [] }
+// Validate an object against the schema
+validateUser({ name: "John", age: 30, email: "john@example.com" }); // { valid: true, errors: [] }
 
-    // optional properties may be omitted
-    validateUser({ name: "John", email: "john@example.com" }); // { valid: true, errors: [] }
+// optional properties may be omitted
+validateUser({ name: "John", email: "john@example.com" }); // { valid: true, errors: [] }
 
-    // Invalid object example
-    validateUser({
-      name: "J", // too short
-      age: 150, // exceeds maximum
-      email: undefined // missing required field
-    });
-    /* Returns:
-    {
-      valid: false,
-      errors: [
-        "name: Minimum length is 2",
-        "age: Maximum value is 120",
-        "email: Value is required"
-      ]
+// Invalid object example
+validateUser({
+  name: "J", // too short
+  age: 150, // exceeds maximum
+  email: undefined // missing required field
+});
+/* Returns:
+{
+  valid: false,
+  errors: [
+    "name: Minimum length is 2",
+    "age: Maximum value is 120",
+    "email: Value is required"
+  ]
+}
+*/
+
+// Array schema example
+const todoListSchema = {
+  type: "array",
+  arraySchema: {
+    type: "object",
+    properties: {
+      id: { type: "string", required: true },
+      task: { type: "string", required: true, minLength: 1 },
+      completed: { type: "boolean", required: true },
+      type: { type: "string", required: true, options: ["business", "personal"] }
     }
-    */
+  },
+  minItems: 1,
+  maxItems: 10
+};
 
-    // Array schema example
-    const todoListSchema = {
-      type: "array",
-      arraySchema: {
-        type: "object",
-        properties: {
-          id: { type: "string", required: true },
-          task: { type: "string", required: true, minLength: 1 },
-          completed: { type: "boolean", required: true },
-          type: { type: "string", required: true, options: ["business", "personal"] }
-        }
-      },
-      minItems: 1,
-      maxItems: 10
-    };
+const validateTodoList = validate.createSchemaValidator("todoList", todoListSchema);
 
-    const validateTodoList = validate.createSchemaValidator("todoList", todoListSchema);
+validateTodoList([{ id: "1", task: "Buy groceries", completed: false, type: "personal" }]); // { valid: true, errors: [] }
 
-    validateTodoList([{ id: "1", task: "Buy groceries", completed: false, type: "personal" }]); // { valid: true, errors: [] }
+validateTodoList([{ id: "2", task: "", completed: "no", type: "work" }]);
+/* Returns:
+{
+  valid: false,
+  errors: [
+    "[0]: task: Minimum length is 1",
+    "[0]: completed: Expected boolean, got string",
+    "[0]: type: Invalid value, expected one of: business, personal"
+  ]
+}
+*/
 
-    validateTodoList([{ id: "2", task: "", completed: "no", type: "work" }]);
-    /* Returns:
-    {
-      valid: false,
-      errors: [
-        "[0]: task: Minimum length is 1",
-        "[0]: completed: Expected boolean, got string",
-        "[0]: type: Invalid value, expected one of: business, personal"
-      ]
-    }
-    */
-
-    // Pattern validation example
-    const usernameSchema = {
-      type: "object",
-      properties: {
-        username: {
-          type: "string",
-          required: true,
-          pattern: "^[a-zA-Z0-9_]{3,16}$" // Alphanumeric + underscore, 3-16 chars
-        }
-      }
-    };
-
-    const validateUsername = validate.createSchemaValidator("username", usernameSchema);
-
-    validateUsername({ username: "john_doe123" }); // { valid: true, errors: [] }
-
-    validateUsername({ username: "j@hn!" });
-    /* Returns:
-    {
-      valid: false,
-      errors: ["username: Value does not match pattern ^[a-zA-Z0-9_]{3,16}$"]
-    }
-    */
-
-    // Custom validation function example
-    const priceSchema = {
-      type: "object",
-      properties: {
-        price: {
-          type: "number",
-          required: true,
-          validate: (value) => {
-            // Must be positive with at most 2 decimal places. Test the digits, not
-            // Number.isInteger(value * 100): 19.99 * 100 is 1998.9999999999998.
-            return value > 0 && /^\d+(\.\d{1,2})?$/.test(String(value));
-          }
-        }
-      }
-    };
-
-    const validatePrice = validate.createSchemaValidator("price", priceSchema);
-
-    validatePrice({ price: 19.99 }); // { valid: true, errors: [] }
-
-    validatePrice({ price: 19.999 });
-    /* Returns:
-    {
-      valid: false,
-      errors: ["price: Custom validation failed"]
-    }
-    */
-
-    // a custom function that throws is reported as an error, not rethrown
-    const validateCode = validate.createSchemaValidator("code", {
+// Pattern validation example
+const usernameSchema = {
+  type: "object",
+  properties: {
+    username: {
       type: "string",
-      validate: () => { throw new Error("lookup failed"); }
-    });
-    validateCode("A1"); // { valid: false, errors: ["Custom validation threw: lookup failed"] }
+      required: true,
+      pattern: "^[a-zA-Z0-9_]{3,16}$" // Alphanumeric + underscore, 3-16 chars
+    }
+  }
+};
+
+const validateUsername = validate.createSchemaValidator("username", usernameSchema);
+
+validateUsername({ username: "john_doe123" }); // { valid: true, errors: [] }
+
+validateUsername({ username: "j@hn!" });
+/* Returns:
+{
+  valid: false,
+  errors: ["username: Value does not match pattern ^[a-zA-Z0-9_]{3,16}$"]
+}
+*/
+
+// Custom validation function example
+const priceSchema = {
+  type: "object",
+  properties: {
+    price: {
+      type: "number",
+      required: true,
+      validate: (value) => {
+        // Must be positive with at most 2 decimal places. Test the digits, not
+        // Number.isInteger(value * 100): 19.99 * 100 is 1998.9999999999998.
+        return value > 0 && /^\d+(\.\d{1,2})?$/.test(String(value));
+      }
+    }
+  }
+};
+
+const validatePrice = validate.createSchemaValidator("price", priceSchema);
+
+validatePrice({ price: 19.99 }); // { valid: true, errors: [] }
+
+validatePrice({ price: 19.999 });
+/* Returns:
+{
+  valid: false,
+  errors: ["price: Custom validation failed"]
+}
+*/
+
+// a custom function that throws is reported as an error, not rethrown
+const validateCode = validate.createSchemaValidator("code", {
+  type: "string",
+  validate: () => { throw new Error("lookup failed"); }
+});
+validateCode("A1"); // { valid: false, errors: ["Custom validation threw: lookup failed"] }
 ```
 
 A schema is checked and copied when it is registered, so later changes to the object you passed in have no effect. Registering a malformed schema throws a `TypeError`. That covers an invalid `pattern`, an unknown `type`, a sub-schema that is not an object, or a circular reference. A `null` `properties` or `arraySchema` is treated as absent.
 
-```javascript
-    validate.createSchemaValidator("bad", { type: "string", pattern: "(" }); // throws TypeError
-    validate.createSchemaValidator("bad", { type: "integer" }); // throws TypeError
+```js
+validate.createSchemaValidator("bad", { type: "string", pattern: "(" }); // throws TypeError
+validate.createSchemaValidator("bad", { type: "integer" }); // throws TypeError
 
-    // getSchema returns a copy of a registered schema (or undefined)
-    const schema = validate.getSchema("user");
+// getSchema returns a copy of a registered schema (or undefined)
+const schema = validate.getSchema("user");
 
-    // updateSchema replaces a registered schema; validators already created for
-    // that name look the schema up when they run, so they use the new one
-    validate.updateSchema("user", { ...schema, properties: { ...schema.properties, age: { type: "number", minimum: 18 } } });
-    validateUser({ name: "John", age: 16, email: "john@example.com" }); // { valid: false, errors: ["age: Minimum value is 18"] }
+// updateSchema replaces a registered schema; validators already created for
+// that name look the schema up when they run, so they use the new one
+validate.updateSchema("user", { ...schema, properties: { ...schema.properties, age: { type: "number", minimum: 18 } } });
+validateUser({ name: "John", age: 16, email: "john@example.com" }); // { valid: false, errors: ["age: Minimum value is 18"] }
 ```
 
-# License #
+## Changelog
 
-Published under the [LGPL-2.1 license](https://github.com/mdaemon-technologies/validate/blob/main/LICENSE "LGPL-2.1 License").
+See [CHANGELOG.md](CHANGELOG.md).
 
-Published by<br/>
-<b>MDaemon Technologies, Ltd.<br/>
-Simple Secure Email</b><br/>
+## License
+
+Published under the [LGPL-2.1](LICENSE) license.
+
+Published by **MDaemon Technologies, Ltd.**  
+Simple Secure Email  
 [https://www.mdaemon.com](https://www.mdaemon.com)
