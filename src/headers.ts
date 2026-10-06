@@ -43,12 +43,15 @@ export function validateHeaderValue(value: string): boolean {
 
 /**
 * Validates that a header string contains a valid name and value.
+* Rejects any control character, including a CR, LF or tab around the name or value.
 *
 * @param {string} header - The header string to validate
 * @returns {boolean} True if the header contains a valid name and value
 */
 export function validateHeader(header: string): boolean {
-  if (typeof header !== "string" || header.indexOf(":") === -1) {
+  // Check the whole header first: trimming the name and value would hide a
+  // leading or trailing CR, LF or tab.
+  if (typeof header !== "string" || header.indexOf(":") === -1 || hasControlCharacters(header)) {
       return false;
   }
 

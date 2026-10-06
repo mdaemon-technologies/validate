@@ -107,6 +107,7 @@ Each label is 1-63 letters, digits and inner hyphens, and the whole name is at m
 ```js
 validate.email("tommy@mdaemon.com"); // true
 validate.email("tommy.com"); // false
+validate.email("tommy@mdaemon.com\r\n"); // false (control characters are rejected)
 
 // use wild cards * or ?
 validate.email("*@mdaemon???", true); // true
@@ -114,7 +115,7 @@ validate.email("*@*.mdaemon.com", true); // true
 validate.email("<script>@x*", true); // false
 ```
 
-Addresses longer than 254 characters are rejected.
+Addresses longer than 254 characters are rejected. So are addresses that contain a control character (U+0000–U+001F or U+007F) anywhere, including inside a quoted local part or at the start or end. Other leading and trailing whitespace (spaces, and Unicode spaces such as U+00A0) is trimmed.
 
 ### Validate ipv4 and ipv6 address syntax
 
@@ -139,6 +140,7 @@ validate.ipv4("10.10.50.1"); // true
 validate.ipv6("2001:0db8:85a3:0000:0000:8a2e:0370:7334"); // true
 validate.ipv6("::ffff:10.10.50.1"); // true (IPv4-mapped IPv6)
 validate.ipv6("10.10.50.1"); // false
+validate.ipv6("fe80::1\r\n"); // false (control characters are rejected)
 ```
 
 ### Validate LDAP DN syntax
@@ -147,6 +149,7 @@ validate.ipv6("10.10.50.1"); // false
 validate.ldapDN("CN=test,OU=test,DC=test"); // true
 validate.ldapDN("uid=john,ou=Group,dc=mdaemon,dc=com"); // true
 validate.ldapDN("test"); // false
+validate.ldapDN("CN=te\tst,DC=test"); // false (control characters are rejected)
 ```
 
 ### Validate windows file name
@@ -195,7 +198,10 @@ validate.headerValue("default-src 'self' \n"); // false
 
 validate.header("Content-Security-Policy: default-src 'self'"); // true
 validate.header("X-Frame-Options"); // false
+validate.header("X-Frame-Options: DENY\r\n"); // false (control characters are rejected anywhere)
 ```
+
+`header` trims whitespace other than control characters (spaces, and Unicode spaces such as U+00A0) around the name and value, but rejects any control character, including a tab after the colon.
 
 ### Validate phone number syntax
 
@@ -278,7 +284,12 @@ validate.isValidPassword("TestPassword1*", true, 4, 20); // true
 
 // a min or max length below 1 means "no limit"
 validate.isValidPassword("TestPassword1", false, 0, 0); // true
+
+// control characters are never valid, whatever the requirements
+validate.isValidPassword("TestPassword1\r\n"); // false
 ```
+
+`isValidPassword` rejects a password that contains a control character (U+0000–U+001F or U+007F). `password` (`validatePassword`) does not report control characters, so its result can show every check passing for a password that `isValidPassword` rejects. Check `hasControlCharacters` to tell the user why.
 
 `setPasswordRequirements` replaces the default rules. Once it has been called, **only** the requirements you enable are enforced (the default upper case / lower case / number rule no longer applies) until `resetPasswordRequirements` is called. It returns `false`, and changes nothing, when `min` is not less than `max` or when the argument is not an object. Values of `min` and `max` below 1 are ignored.
 

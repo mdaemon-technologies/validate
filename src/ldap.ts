@@ -17,10 +17,7 @@
 *    USA
 */
 
-// Checks if a string contains a carriage return or line feed.
-function hasBreaks(str: string): boolean {
-  return /\r|\n/.test(str);
-}
+import { hasControlCharacters } from "./characters";
 
 // An optional CN/UID component, then CN/OU components, then DC components. This
 // accepts exactly what the original, exponential pattern did, but backtracks at most
@@ -31,6 +28,7 @@ const LDAP_DN = /^(?:(?:CN|2\.5\.4\.3|UID|0\.9\.2342\.19200300\.100\.1\.1) *=[^,
 
 /**
 * Validates if a given string is a valid LDAP distinguished name (DN).
+* Rejects any control character, not only CR and LF.
 *
 * @param {string} str - The string to validate.
 * @returns {boolean} True if the string is a valid LDAP DN, false otherwise.
@@ -39,5 +37,5 @@ export function validateLdapDN(str: string): boolean {
   if (typeof str !== "string") {
       return false;
   }
-  return !!str.trim() && !hasBreaks(str) && LDAP_DN.test(str);
+  return !!str.trim() && !hasControlCharacters(str) && LDAP_DN.test(str);
 }

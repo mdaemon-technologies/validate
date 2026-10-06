@@ -17,7 +17,7 @@
 *    USA
 */
 
-import { hasLowerCase, hasNumber, hasSpecial, hasUpperCase } from "./characters";
+import { hasControlCharacters, hasLowerCase, hasNumber, hasSpecial, hasUpperCase } from "./characters";
 
 /**
 * The password requirements in effect.
@@ -192,6 +192,7 @@ function resolveLengthLimit(override: number | undefined, configured: number): n
 
 /**
 * Validates a password string against a set of requirements.
+* Control characters are not reported here; isValidPassword rejects them.
 *
 * @param {string} str - The password string to validate.
 * @param {boolean} [bRequireSpecial] - Whether to require special characters. Overrides global setting if passed.
@@ -255,7 +256,8 @@ export function validatePassword(str: string, bRequireSpecial?: boolean, nMinLen
 
 /**
 * Validates if a given password meets a set of password
-* requirements.
+* requirements. A password containing a control character is never valid,
+* although validatePassword does not report it.
 *
 * @param {string} str - The password to validate.
 * @param {boolean} bRequireSpecial - Whether to require special characters.
@@ -265,7 +267,9 @@ export function validatePassword(str: string, bRequireSpecial?: boolean, nMinLen
 * @returns {boolean} True if the password is valid, false otherwise.
 */
 export function isValidPassword(str: string, bRequireSpecial?: boolean, nMinLength?: number, nMaxLength?: number): boolean {
-  if (typeof str !== "string") {
+  // validatePassword's published result has no field to report this, so only
+  // isValidPassword enforces it.
+  if (typeof str !== "string" || hasControlCharacters(str)) {
       return false;
   }
 

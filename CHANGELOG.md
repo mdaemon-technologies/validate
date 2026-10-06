@@ -5,6 +5,92 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.0] - 2026-10-06
+
+A security release. `validateEmailAddress`, `validateHeader`,
+`validateIPAddress` (and `validateIPv6`), `validateLdapDN` and `isValidPassword`
+now reject every C0 control character (U+0000–U+001F) and DEL (U+007F). The
+email, header and IPv6 checks let a CR or LF through, which a caller could pass
+on into a mail or HTTP header.
+
+Validation output changes for some inputs (see *Migration notes*). There are no
+API or TypeScript changes, and still no runtime dependencies.
+
+**Migration notes:**
+
+- **Now rejected:**
+  - a control character in the local part of an email address, quoted
+    (`"\"a\r\nb\"@example.com"`) or unquoted (NUL, ESC, DEL). The domain part
+    and wildcard patterns already rejected them.
+  - a tab, CR, LF, VT or FF at the start or end of an email address or email
+    wildcard pattern (`"user@example.com\r\n"`, `"\t*@example.com"`), a header
+    passed to `validateHeader`, or its name or value (`"X-Test: value\r\n"`,
+    `"X-Test:\tvalue"`). These were trimmed before the check, so they passed.
+    Control characters inside a header's name or value were already rejected.
+  - a tab, CR, LF, VT or FF at the start or end of an IPv6 address
+    (`"fe80::1\r\n"`) or before its prefix length (`"fe80::1\n/64"`), in
+    `validateIPAddress` and `validateIPv6`. IPv4 addresses and IP wildcard
+    patterns already rejected them.
+  - a control character other than CR or LF in or after an LDAP DN attribute
+    value (`"cn=jo\u0000hn,dc=example,dc=com"`, or a trailing tab). Elsewhere in
+    a DN, the pattern already rejected them.
+  - a control character anywhere in a password passed to `isValidPassword`
+    (`"TestPassword1\r\n"`), whatever the password requirements.
+- **Unchanged:**
+  - Email addresses: other leading and trailing whitespace (spaces, and Unicode
+    spaces such as U+00A0) is still trimmed, and spaces inside a quoted local part
+    (`"\"boss ted\"@example.com"`) are still accepted.
+  - Headers: spaces around the name and value are still trimmed.
+  - IPv6 addresses: leading and trailing spaces are still accepted.
+  - Passwords: `validatePassword`'s result does not report control characters,
+    so every check can pass for a password that `isValidPassword` now rejects.
+    Use `hasControlCharacters` to tell the user why.
+
+### Security
+
+- **`validateEmailAddress` rejects control characters.**
+  - Before, in normal mode: the unquoted local part rejected only whitespace, so
+    NUL, ESC, DEL and other control characters were accepted. A quoted local
+    part accepted anything but `"` and `\`, including CR and LF, so
+    `"\"x\r\nBcc: evil@evil.com\"@example.com"` was valid.
+  - Before, in both modes: the input was trimmed before the check, but the
+    untrimmed string was reported valid, so a leading or trailing CRLF passed.
+    Wildcard mode already rejected control characters, but only after trimming.
+  - Now: the untrimmed input is checked with `hasControlCharacters` before
+    trimming and before any pattern check, in both modes.
+- **`validateHeader` rejects control characters.**
+  - Before: it trimmed the name and the value, then checked each one, so a CR,
+    LF, tab, VT or FF before or after either one was dropped. `"X-Test: value\r\n"`
+    was valid, which let a caller end the header block early.
+  - Now: the whole header is checked with `hasControlCharacters` first.
+- **`validateIPAddress` and `validateIPv6` reject control characters.**
+  - Before: the IPv6 pattern allowed whitespace around the address, so
+    `"fe80::1\r\n"` and `"fe80::1\n/64"` were valid.
+  - Now: the input is checked with `hasControlCharacters` first. Wildcard
+    patterns already rejected control characters.
+- **`validateLdapDN` rejects every control character.**
+  - Before: only CR and LF were checked explicitly, so a tab, NUL or ESC in or
+    after an attribute value passed.
+  - Now: it uses `hasControlCharacters`, like the other validators.
+- **`isValidPassword` rejects control characters.**
+  - Before: any control character passed validation. A POP3 `PASS` argument
+    must be printable ASCII (RFC 1939), and an IMAP quoted string cannot contain
+    CR or LF (RFC 9051), so the user could be locked out of some mail clients.
+  - Now: `isValidPassword` returns `false` for a password that contains any
+    control character, checked with `hasControlCharacters`.
+    `validatePassword`'s result keeps its published shape and does not report
+    it (see *Migration notes*).
+
+## [3.5.1] - 2026-09-21
+
+A packaging and documentation release. The code is unchanged from 3.5.0.
+
+### Changed
+
+- **`engines`:** `package.json` now declares `"node": ">=20"`, matching the
+  oldest Node version tested in CI.
+- **README and changelog:** documentation rewritten for clarity.
+
 ## [3.5.0] - 2026-09-11
 
 A security, correctness, and packaging release.
@@ -305,6 +391,8 @@ See the Git history for changes prior to 3.3.5.
 
 Version 3.0.0 (2025-04-24) converted the library to TypeScript for improved type safety and developer experience. While the source code uses TypeScript and requires dev dependencies (TypeScript, Rollup, Jest, etc.) for building and testing, the published package has **zero runtime dependencies**.
 
+[3.6.0]: https://www.npmjs.com/package/@mdaemon/validate/v/3.6.0
+[3.5.1]: https://www.npmjs.com/package/@mdaemon/validate/v/3.5.1
 [3.5.0]: https://www.npmjs.com/package/@mdaemon/validate/v/3.5.0
 [3.4.0]: https://www.npmjs.com/package/@mdaemon/validate/v/3.4.0
 [3.3.6]: https://www.npmjs.com/package/@mdaemon/validate/v/3.3.6

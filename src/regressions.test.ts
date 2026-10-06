@@ -7,6 +7,7 @@ import {
   updateSchema,
   validateDomain,
   validateEmailAddress,
+  validateHeader,
   validateHeaderName,
   validateIPAddress,
   validateIPv4,
@@ -119,6 +120,78 @@ describe("validateEmailAddress with wildcards", () => {
   });
 });
 
+describe("validateEmailAddress control characters", () => {
+  it("rejects control characters in the local part", () => {
+    expect(validateEmailAddress("us\u0000er@example.com")).toBe(false);
+    expect(validateEmailAddress("us\u0007er@example.com")).toBe(false);
+    expect(validateEmailAddress("us\u001ber@example.com")).toBe(false);
+    expect(validateEmailAddress("us\u007fer@example.com")).toBe(false);
+  });
+
+  it("rejects control characters inside a quoted local part", () => {
+    expect(validateEmailAddress("\"x\r\nBcc: evil@evil.com\"@example.com")).toBe(false);
+    expect(validateEmailAddress("\"a\u0000b\"@example.com")).toBe(false);
+  });
+
+  it("rejects leading and trailing control characters instead of trimming them", () => {
+    expect(validateEmailAddress("user@example.com\r\n")).toBe(false);
+    expect(validateEmailAddress("\r\nuser@example.com")).toBe(false);
+    expect(validateEmailAddress("user@example.com\t")).toBe(false);
+  });
+
+  it("rejects control characters in wildcard patterns, including at the ends", () => {
+    expect(validateEmailAddress("*@example.com\n", true)).toBe(false);
+    expect(validateEmailAddress("\t*@example.com", true)).toBe(false);
+    expect(validateEmailAddress("*\u0001@example.com", true)).toBe(false);
+  });
+
+  it("still trims leading and trailing spaces and accepts quoted spaces", () => {
+    expect(validateEmailAddress(" user@example.com ")).toBe(true);
+    expect(validateEmailAddress("\"boss ted\"@tommy.com")).toBe(true);
+    expect(validateEmailAddress(" *@example.com ", true)).toBe(true);
+  });
+});
+
+describe("validateHeader control characters", () => {
+  it("rejects control characters that trimming the name or value would hide", () => {
+    expect(validateHeader("X-Test: value\r\n")).toBe(false);
+    expect(validateHeader("\r\nX-Test: value")).toBe(false);
+    expect(validateHeader("X-Test\r\n: value")).toBe(false);
+    expect(validateHeader("X-Test:\r\n value")).toBe(false);
+    expect(validateHeader("X-Test:\tvalue")).toBe(false);
+  });
+
+  it("still trims spaces around the name and value", () => {
+    expect(validateHeader(" X-Test : value ")).toBe(true);
+  });
+});
+
+describe("validateIPAddress control characters", () => {
+  it("rejects leading and trailing control characters around an IPv6 address", () => {
+    expect(validateIPAddress("fe80::1\r\n")).toBe(false);
+    expect(validateIPAddress("\r\nfe80::1")).toBe(false);
+    expect(validateIPAddress("fe80::1%eth0\n")).toBe(false);
+    expect(validateIPAddress("::ffff:1.2.3.4\t")).toBe(false);
+    expect(validateIPv6("fe80::1\r\n")).toBe(false);
+    expect(validateIPAddress("fe80::1\n/64")).toBe(false);
+  });
+
+  it("still rejects control characters in wildcard patterns", () => {
+    expect(validateIPAddress("10.*.*.*\n", true)).toBe(false);
+    expect(validateIPAddress("fe80::*\r\n", true)).toBe(false);
+  });
+});
+
+describe("validateLdapDN control characters", () => {
+  it("rejects every control character, not only CR and LF", () => {
+    expect(validateLdapDN("cn=jo\u0000hn,dc=example,dc=com")).toBe(false);
+    expect(validateLdapDN("cn=john,dc=example,dc=com\t")).toBe(false);
+    expect(validateLdapDN("cn=john\u001b,dc=example,dc=com")).toBe(false);
+    expect(validateLdapDN("cn=john,dc=example,dc=com\u007f")).toBe(false);
+    expect(validateLdapDN("cn=john\r\n,dc=example,dc=com")).toBe(false);
+  });
+});
+
 describe("validateDomain", () => {
   it("rejects empty and malformed labels", () => {
     expect(validateDomain("...")).toBe(false);
@@ -199,6 +272,25 @@ describe("password validation", () => {
     expect(isValidPassword("aaaaaaaa")).toBe(false);
     setPasswordRequirements({ min: 8 });
     expect(isValidPassword("aaaaaaaa")).toBe(true);
+  });
+
+  it("isValidPassword rejects control characters with the default requirements", () => {
+    expect(isValidPassword("Abc\r\ndef1")).toBe(false);
+    expect(isValidPassword("Abcdef1\n")).toBe(false);
+    expect(isValidPassword("Abc\u0000def1")).toBe(false);
+    expect(isValidPassword("Abc\tdef1")).toBe(false);
+    expect(isValidPassword("Abcdef1\u007f")).toBe(false);
+    expect(isValidPassword("Abc def1")).toBe(true);
+  });
+
+  it("isValidPassword rejects control characters once requirements are set", () => {
+    setPasswordRequirements({ min: 4 });
+    expect(isValidPassword("abc\r\ndef")).toBe(false);
+    expect(isValidPassword("abcdef")).toBe(true);
+  });
+
+  it("validatePassword's result is unchanged by control characters", () => {
+    expect(validatePassword("Abc\r\ndef1")).toEqual(validatePassword("Abc  def1"));
   });
 });
 

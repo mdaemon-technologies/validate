@@ -33,6 +33,7 @@ const IPV6_PREFIX = /\/(?=\d{1,3}$)0*(?:12[0-8]|1[01]\d|[1-9]?\d)$/;
 /**
 * Validates if an email address is valid.
 * Supports wildcard matching if useWildCards is true.
+* Rejects any control character, including a leading or trailing CR, LF or tab.
 *
 * @param {string} email - The email address to validate
 * @param {boolean} useWildCards - Whether to allow wildcard matching
@@ -49,10 +50,16 @@ export function validateEmailAddress(email: string, useWildCards: boolean | null
       return false;
   }
 
+  // Control characters (CR/LF in particular) are never valid, even inside a quoted
+  // local part or at the ends, where trim() would otherwise hide them.
+  if (hasControlCharacters(email)) {
+      return false;
+  }
+
   // Email patterns only use the "*" and "?" wildcards; "#" is a legal local-part character.
   if (useWildCards && /[*?]/.test(email)) {
       const pattern = email.trim();
-      if (hasControlCharacters(pattern) || !/^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+$/.test(pattern)) {
+      if (!/^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+$/.test(pattern)) {
           return false;
       }
       const domainPart = pattern.slice(pattern.indexOf("@") + 1);
@@ -92,13 +99,15 @@ export function validateDomain(domain: string, useWildCards: boolean | null = fa
 /**
 * Validates if an IP address string is valid.
 * Supports IPv4, IPv6, and wildcard matching if useWildCards is true.
+* Rejects any control character, including a leading or trailing CR, LF or tab.
 *
 * @param {string} ip - The IP address to validate
 * @param {boolean} useWildCards - Whether to allow wildcard matching
 * @returns {boolean} True if the IP address is valid
 */
 export function validateIPAddress(ip: string, useWildCards: boolean | null = false): boolean {
-  if (typeof ip !== "string") {
+  // The IPv6 pattern allows surrounding whitespace, which would let a CR or LF through.
+  if (typeof ip !== "string" || hasControlCharacters(ip)) {
       return false;
   }
 

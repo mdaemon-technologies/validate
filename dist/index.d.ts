@@ -60,6 +60,7 @@ declare function validateHeaderName(name: string): boolean;
 declare function validateHeaderValue(value: string): boolean;
 /**
 * Validates that a header string contains a valid name and value.
+* Rejects any control character, including a CR, LF or tab around the name or value.
 *
 * @param {string} header - The header string to validate
 * @returns {boolean} True if the header contains a valid name and value
@@ -68,6 +69,7 @@ declare function validateHeader(header: string): boolean;
 
 /**
 * Validates if a given string is a valid LDAP distinguished name (DN).
+* Rejects any control character, not only CR and LF.
 *
 * @param {string} str - The string to validate.
 * @returns {boolean} True if the string is a valid LDAP DN, false otherwise.
@@ -77,6 +79,7 @@ declare function validateLdapDN(str: string): boolean;
 /**
 * Validates if an email address is valid.
 * Supports wildcard matching if useWildCards is true.
+* Rejects any control character, including a leading or trailing CR, LF or tab.
 *
 * @param {string} email - The email address to validate
 * @param {boolean} useWildCards - Whether to allow wildcard matching
@@ -95,6 +98,7 @@ declare function validateDomain(domain: string, useWildCards?: boolean | null): 
 /**
 * Validates if an IP address string is valid.
 * Supports IPv4, IPv6, and wildcard matching if useWildCards is true.
+* Rejects any control character, including a leading or trailing CR, LF or tab.
 *
 * @param {string} ip - The IP address to validate
 * @param {boolean} useWildCards - Whether to allow wildcard matching
@@ -180,6 +184,7 @@ declare function setPasswordRequirements(obj: Partial<MDaemonPasswordRequirement
 declare function resetPasswordRequirements(): void;
 /**
 * Validates a password string against a set of requirements.
+* Control characters are not reported here; isValidPassword rejects them.
 *
 * @param {string} str - The password string to validate.
 * @param {boolean} [bRequireSpecial] - Whether to require special characters. Overrides global setting if passed.
@@ -191,7 +196,8 @@ declare function resetPasswordRequirements(): void;
 declare function validatePassword(str: string, bRequireSpecial?: boolean, nMinLength?: number, nMaxLength?: number): MDaemonValidPassword;
 /**
 * Validates if a given password meets a set of password
-* requirements.
+* requirements. A password containing a control character is never valid,
+* although validatePassword does not report it.
 *
 * @param {string} str - The password to validate.
 * @param {boolean} bRequireSpecial - Whether to require special characters.
