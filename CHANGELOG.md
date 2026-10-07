@@ -5,6 +5,50 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-10-06
+
+A major release with one breaking change: `validatePassword`'s result reports
+control characters, so it agrees with `isValidPassword`. In 3.6.0, the result
+could show every check passing for a password that `isValidPassword` rejected.
+
+Accept/reject decisions are unchanged: `isValidPassword` accepts and rejects
+exactly what it did in 3.6.0. There are still no runtime dependencies. Upgrading
+from 3.5.x: see also the 3.6.0 *Migration notes*.
+
+**Migration notes:**
+
+- **Runtime:** every `validatePassword` (`validate.password`) result has a new
+  `controlCharacters` key.
+  - **Code that iterates over a result** (`Object.keys`, `Object.entries`,
+    `Object.values`), for example to list failed checks, now sees it. Like
+    `badPassword`, it is `true` when the password fails, so a loop that treats
+    `false` as a failed check reports it for every valid password. Handle it the
+    way you handle `badPassword`, or skip it.
+  - **Code that compares a whole result**, such as `toEqual`/`toStrictEqual` or
+    snapshot tests, must add `controlCharacters: false`. This includes
+    serialised results checked by a strict schema on the receiving side.
+- **TypeScript:** `MDaemonValidPassword` has a new required
+  `controlCharacters: boolean` field.
+  - Code that only reads a result's properties needs no changes.
+  - Code that builds an `MDaemonValidPassword`, such as a mock of
+    `validatePassword` or an implementation of `MDaemonValidate`'s `password`,
+    or code typed over its keys, such as a
+    `Record<keyof MDaemonValidPassword, string>` of labels, must add
+    `controlCharacters`.
+- **3.6.0 workaround:** if you called `hasControlCharacters` to explain why
+  `isValidPassword` rejected a password, you can read `controlCharacters` from
+  the result instead.
+
+### Changed
+
+- **`validatePassword` reports `controlCharacters`.** It is `true` when the
+  password contains a C0 control character (U+0000–U+001F) or DEL (U+007F),
+  which makes the password invalid. Like `badPassword`, `true` means the
+  password fails. Unlike the other checks, it is always present, including
+  once password requirements are set, and it is `false` for a non-string.
+- **`isValidPassword` reads `controlCharacters` from the result** instead of
+  checking separately, so the two functions cannot disagree.
+
 ## [3.6.0] - 2026-10-06
 
 A security release. `validateEmailAddress`, `validateHeader`,
@@ -391,6 +435,7 @@ See the Git history for changes prior to 3.3.5.
 
 Version 3.0.0 (2025-04-24) converted the library to TypeScript for improved type safety and developer experience. While the source code uses TypeScript and requires dev dependencies (TypeScript, Rollup, Jest, etc.) for building and testing, the published package has **zero runtime dependencies**.
 
+[4.0.0]: https://www.npmjs.com/package/@mdaemon/validate/v/4.0.0
 [3.6.0]: https://www.npmjs.com/package/@mdaemon/validate/v/3.6.0
 [3.5.1]: https://www.npmjs.com/package/@mdaemon/validate/v/3.5.1
 [3.5.0]: https://www.npmjs.com/package/@mdaemon/validate/v/3.5.0

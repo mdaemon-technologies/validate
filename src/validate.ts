@@ -63,10 +63,12 @@ export {
   validateWindowsPath
 };
 
-// MDaemonValidate is kept exactly as published in 3.4.0. Code may implement it (in
-// a mock, for example), so its members must not change: adding a required member
-// breaks such code, and so does loosening one, because under strictNullChecks a
-// required parameter is not assignable to an optional one.
+// MDaemonValidate is kept exactly as published in 3.4.0, apart from 4.0.0's
+// controlCharacters field on the MDaemonValidPassword that `password` returns.
+// Code may implement it (in a mock, for example), so its members must not change
+// outside a major release: adding a required member breaks such code, and so does
+// loosening one, because under strictNullChecks a required parameter is not
+// assignable to an optional one.
 
 /**
 * The API of the default `validate` object. The default export also accepts

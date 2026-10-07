@@ -137,6 +137,7 @@ interface MDaemonPasswordRequirements {
  * present, so `upper`, `lower`, `number` and `special` may be absent at runtime
  * even though they are typed as required (the published type is kept for
  * compatibility). Compare them with `=== false`, as isValidPassword does.
+ * `length` and `controlCharacters` are always present.
  */
 interface MDaemonValidPassword {
     /** Whether the password has an upper case letter. May be absent once requirements are set: compare with `=== false`. */
@@ -153,6 +154,8 @@ interface MDaemonValidPassword {
     special: boolean;
     /** The password's length. */
     length: number;
+    /** Whether the password contains a control character (U+0000-U+001F or U+007F), which makes it invalid. Always present. */
+    controlCharacters: boolean;
     /** Whether the password meets the minimum length. Present only when a minimum applies. */
     min?: boolean;
     /** Whether the password is within the maximum length. Present only when a maximum applies. */
@@ -184,7 +187,7 @@ declare function setPasswordRequirements(obj: Partial<MDaemonPasswordRequirement
 declare function resetPasswordRequirements(): void;
 /**
 * Validates a password string against a set of requirements.
-* Control characters are not reported here; isValidPassword rejects them.
+* `controlCharacters` is always reported, whatever the requirements.
 *
 * @param {string} str - The password string to validate.
 * @param {boolean} [bRequireSpecial] - Whether to require special characters. Overrides global setting if passed.
@@ -196,8 +199,7 @@ declare function resetPasswordRequirements(): void;
 declare function validatePassword(str: string, bRequireSpecial?: boolean, nMinLength?: number, nMaxLength?: number): MDaemonValidPassword;
 /**
 * Validates if a given password meets a set of password
-* requirements. A password containing a control character is never valid,
-* although validatePassword does not report it.
+* requirements. A password containing a control character is never valid.
 *
 * @param {string} str - The password to validate.
 * @param {boolean} bRequireSpecial - Whether to require special characters.

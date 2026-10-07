@@ -23,6 +23,7 @@ const requirements: MDaemonPasswordRequirements = { min: 8, badPasswords: ["pass
 validate.setPasswordRequirements(requirements);
 const result: MDaemonValidPassword = validate.password("Test1");
 const length: number = result.length;
+const controlCharacters: boolean = result.controlCharacters;
 
 const schema: ISchema = { type: "object", properties: { name: { type: "string", required: true } } };
 const check: (input: unknown) => ISchemaValidationResult = validate.createSchemaValidator("user", schema);
@@ -35,4 +36,4 @@ const notString: string = result.length;
 // @ts-expect-error unknown schema type
 const badSchema: ISchema = { type: "integer" };
 
-export { length, check, notString, badSchema };
+export { length, controlCharacters, check, notString, badSchema };

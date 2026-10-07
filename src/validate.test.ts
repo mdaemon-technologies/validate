@@ -327,13 +327,14 @@ describe("validate has method password", () => {
     expect(typeof validate.password).toBe("function");
   });
   
-  it("returns an object with boolean properties special, number, upper, lower, and number property length", () => {
+  it("returns an object with boolean properties special, number, upper, lower, controlCharacters, and number property length", () => {
     expect(validate.password("ThisIsAPassword1*", true)).toEqual({
       special: true,
       number: true,
       upper: true,
       lower: true,
-      length: 17
+      length: 17,
+      controlCharacters: false
     });
 
     expect(validate.password("thisisapassword1*", true)).toEqual({
@@ -341,7 +342,8 @@ describe("validate has method password", () => {
       number: true,
       upper: false,
       lower: true,
-      length: 17
+      length: 17,
+      controlCharacters: false
     });
 
     expect(validate.password("THISISAPASSWORD1*", true)).toEqual({
@@ -349,7 +351,8 @@ describe("validate has method password", () => {
       number: true,
       upper: true,
       lower: false,
-      length: 17
+      length: 17,
+      controlCharacters: false
     });
 
     expect(validate.password("1561321", true)).toEqual({
@@ -357,7 +360,8 @@ describe("validate has method password", () => {
       number: true,
       upper: false,
       lower: false,
-      length: 7
+      length: 7,
+      controlCharacters: false
     });
 
     expect(validate.password("ThisIsAPassword*", true)).toEqual({
@@ -365,7 +369,8 @@ describe("validate has method password", () => {
       number: false,
       upper: true,
       lower: true,
-      length: 16
+      length: 16,
+      controlCharacters: false
     });
   });
 
@@ -376,6 +381,7 @@ describe("validate has method password", () => {
       upper: true,
       lower: true,
       length: 16,
+      controlCharacters: false,
       min: true,
       max: true
     });
@@ -386,6 +392,7 @@ describe("validate has method password", () => {
       upper: true,
       lower: true,
       length: 16,
+      controlCharacters: false,
       min: false,
       max: true
     });
@@ -396,6 +403,7 @@ describe("validate has method password", () => {
       upper: true,
       lower: true,
       length: 16,
+      controlCharacters: false,
       min: true,
       max: false
     });

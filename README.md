@@ -73,7 +73,7 @@ The package ships its own type declarations, for both ES module (`import`) and C
 - `ISchema` - A validation schema
 - `ISchemaValidationResult` - The result of a schema validator: `{ valid: boolean, errors: string[] }`
 - `MDaemonPasswordRequirements` - The options accepted by `setPasswordRequirements`
-- `MDaemonValidPassword` - The result of `password` / `validatePassword`. Once password requirements are set, only the checks being enforced are present at runtime, so test a field with `=== false`.
+- `MDaemonValidPassword` - The result of `password` / `validatePassword`. `length` and `controlCharacters` are always present. Once password requirements are set, the other checks are present only when enforced, so test them with `=== false`. `controlCharacters` and `badPassword` are `true` when the password fails.
 - `MDaemonValidate` - The default `validate` object
 
 ## Wildcards
@@ -231,7 +231,8 @@ validate.password("Test this Password1");
         lower: true,
         upper: true,
         number: true,
-        length: 19
+        length: 19,
+        controlCharacters: false
     }
 */
 
@@ -243,7 +244,8 @@ validate.password("test this one1", true);
         lower: true,
         upper: false,
         number: true,
-        length: 14
+        length: 14,
+        controlCharacters: false
     }
 */
 
@@ -256,6 +258,7 @@ validate.password("Test1", false, 8);
         upper: true,
         number: true,
         length: 5,
+        controlCharacters: false,
         min: false
     }
 */
@@ -287,9 +290,20 @@ validate.isValidPassword("TestPassword1", false, 0, 0); // true
 
 // control characters are never valid, whatever the requirements
 validate.isValidPassword("TestPassword1\r\n"); // false
+validate.password("TestPassword1\r\n");
+/*
+    {
+        special: true,
+        lower: true,
+        upper: true,
+        number: true,
+        length: 15,
+        controlCharacters: true
+    }
+*/
 ```
 
-`isValidPassword` rejects a password that contains a control character (U+0000–U+001F or U+007F). `password` (`validatePassword`) does not report control characters, so its result can show every check passing for a password that `isValidPassword` rejects. Check `hasControlCharacters` to tell the user why.
+`controlCharacters` is `true` when the password contains a control character (U+0000–U+001F or U+007F), which makes it invalid. Unlike the other checks, it is always present, even once requirements are set. `isValidPassword` returns `false` whenever it is `true`.
 
 `setPasswordRequirements` replaces the default rules. Once it has been called, **only** the requirements you enable are enforced (the default upper case / lower case / number rule no longer applies) until `resetPasswordRequirements` is called. It returns `false`, and changes nothing, when `min` is not less than `max` or when the argument is not an object. Values of `min` and `max` below 1 are ignored.
 
@@ -310,6 +324,7 @@ validate.password("TestPassword*");
 /*
     {
         length: 13,
+        controlCharacters: false,
         special: true,
         lower: true,
         upper: true,

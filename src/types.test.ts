@@ -68,7 +68,7 @@ describe("published type declarations", () => {
     expect(typeCheck("consumer.mts")).toEqual([]);
   }, 30000);
 
-  it("still compile code written against the 3.4.0 declarations", () => {
+  it("still compile code written against the 3.4.0 declarations, apart from the 4.0.0 change", () => {
     expect(typeCheck("compat-3.4.mts")).toEqual([]);
   }, 30000);
 

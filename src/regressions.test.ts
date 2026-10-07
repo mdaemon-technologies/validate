@@ -289,8 +289,27 @@ describe("password validation", () => {
     expect(isValidPassword("abcdef")).toBe(true);
   });
 
-  it("validatePassword's result is unchanged by control characters", () => {
-    expect(validatePassword("Abc\r\ndef1")).toEqual(validatePassword("Abc  def1"));
+  it("validatePassword reports control characters with the default requirements", () => {
+    expect(validatePassword("Abc\r\ndef1").controlCharacters).toBe(true);
+    expect(validatePassword("Abc\u0000def1").controlCharacters).toBe(true);
+    expect(validatePassword("Abc def1").controlCharacters).toBe(false);
+  });
+
+  it("validatePassword reports exactly C0 and DEL as control characters", () => {
+    expect(validatePassword("Abcdef1\u001f").controlCharacters).toBe(true);
+    expect(validatePassword("Abcdef1\u007f").controlCharacters).toBe(true);
+    expect(validatePassword("Abcdef1 ").controlCharacters).toBe(false);
+    expect(validatePassword("Abcdef1\u0080").controlCharacters).toBe(false);
+  });
+
+  it("validatePassword always reports control characters once requirements are set", () => {
+    setPasswordRequirements({ min: 4 });
+    expect(validatePassword("abc\tdef")).toEqual({ length: 7, controlCharacters: true, min: true });
+    expect(validatePassword("abcdef").controlCharacters).toBe(false);
+  });
+
+  it("validatePassword reports no control characters for a non-string", () => {
+    expect(validatePassword(undefined as any).controlCharacters).toBe(false);
   });
 });
 

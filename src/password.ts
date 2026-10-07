@@ -60,6 +60,7 @@ export interface MDaemonPasswordRequirements {
  * present, so `upper`, `lower`, `number` and `special` may be absent at runtime
  * even though they are typed as required (the published type is kept for
  * compatibility). Compare them with `=== false`, as isValidPassword does.
+ * `length` and `controlCharacters` are always present.
  */
 export interface MDaemonValidPassword {
   /** Whether the password has an upper case letter. May be absent once requirements are set: compare with `=== false`. */
@@ -76,6 +77,8 @@ export interface MDaemonValidPassword {
   special: boolean;
   /** The password's length. */
   length: number;
+  /** Whether the password contains a control character (U+0000-U+001F or U+007F), which makes it invalid. Always present. */
+  controlCharacters: boolean;
   /** Whether the password meets the minimum length. Present only when a minimum applies. */
   min?: boolean;
   /** Whether the password is within the maximum length. Present only when a maximum applies. */
@@ -192,7 +195,7 @@ function resolveLengthLimit(override: number | undefined, configured: number): n
 
 /**
 * Validates a password string against a set of requirements.
-* Control characters are not reported here; isValidPassword rejects them.
+* `controlCharacters` is always reported, whatever the requirements.
 *
 * @param {string} str - The password string to validate.
 * @param {boolean} [bRequireSpecial] - Whether to require special characters. Overrides global setting if passed.
@@ -206,10 +209,10 @@ export function validatePassword(str: string, bRequireSpecial?: boolean, nMinLen
   let ret: PasswordResult;
 
   if (typeof str !== "string") {
-      ret = { special: false, lower: false, upper: false, number: false, length: 0 };
+      ret = { special: false, lower: false, upper: false, number: false, length: 0, controlCharacters: false };
   }
   else if (req.setByUser) {
-      ret = { length: str.length };
+      ret = { length: str.length, controlCharacters: hasControlCharacters(str) };
       if ((req.requireSpecial && typeof bRequireSpecial === "undefined") || bRequireSpecial) {
           ret.special = hasSpecial(str);
       }
@@ -236,7 +239,8 @@ export function validatePassword(str: string, bRequireSpecial?: boolean, nMinLen
           lower: hasLowerCase(str),
           upper: hasUpperCase(str),
           number: hasNumber(str),
-          length: str.length
+          length: str.length,
+          controlCharacters: hasControlCharacters(str)
       };
   }
 
@@ -256,8 +260,7 @@ export function validatePassword(str: string, bRequireSpecial?: boolean, nMinLen
 
 /**
 * Validates if a given password meets a set of password
-* requirements. A password containing a control character is never valid,
-* although validatePassword does not report it.
+* requirements. A password containing a control character is never valid.
 *
 * @param {string} str - The password to validate.
 * @param {boolean} bRequireSpecial - Whether to require special characters.
@@ -267,14 +270,13 @@ export function validatePassword(str: string, bRequireSpecial?: boolean, nMinLen
 * @returns {boolean} True if the password is valid, false otherwise.
 */
 export function isValidPassword(str: string, bRequireSpecial?: boolean, nMinLength?: number, nMaxLength?: number): boolean {
-  // validatePassword's published result has no field to report this, so only
-  // isValidPassword enforces it.
-  if (typeof str !== "string" || hasControlCharacters(str)) {
+  if (typeof str !== "string") {
       return false;
   }
 
   // Absent fields were not checked; only an explicit false fails.
   const result: PasswordResult = validatePassword(str, bRequireSpecial, nMinLength, nMaxLength);
   const checks = ["lower", "upper", "number", "special", "min", "max"] as const;
-  return checks.every(check => result[check] !== false) && result.badPassword !== true;
+  return checks.every(check => result[check] !== false) &&
+      result.badPassword !== true && !result.controlCharacters;
 }

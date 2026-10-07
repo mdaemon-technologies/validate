@@ -1,7 +1,12 @@
 // Code written against the 3.4.0 declarations (the hand-written dist/index.d.ts).
 // It must keep compiling. 3.5.x may loosen function signatures (listed in the
 // changelog), but it must not rename, remove or tighten anything, and the
-// published interfaces keep their exact 3.4.0 shapes.
+// published interfaces keep their exact 3.4.0 shapes, apart from the 4.0.0 change
+// below.
+//
+// 4.0.0 makes one breaking change: MDaemonValidPassword gains the required
+// `controlCharacters` field, so code that builds one (or implements
+// MDaemonValidate's `password`) must set it. Everything else here is unchanged.
 import validate, * as named from "@mdaemon/validate";
 import type { ISchema, ISchemaValidationResult, MDaemonPasswordRequirements, MDaemonValidate, MDaemonValidPassword } from "@mdaemon/validate";
 
@@ -76,18 +81,35 @@ interface V340Validate {
     resetPasswordRequirements: () => void;
 }
 
-// ---- The published interfaces keep their exact 3.4.0 shapes ----
+// ---- The 4.0.0 change, exactly ----
 
-// Each type is assignable to its 3.4.0 twin and back, so neither code that reads
-// these types nor code that builds or implements them can break.
+interface V400ValidPassword extends V340ValidPassword {
+    controlCharacters: boolean;
+}
+
+interface V400Validate extends Omit<V340Validate, "password"> {
+    password: (str: string, bRequireSpecial: boolean, nMinLength?: number, nMaxLength?: number) => V400ValidPassword;
+}
+
+// ---- The published interfaces keep their exact shapes ----
+
+// Each type is assignable to its twin and back, so neither code that reads
+// these types nor code that builds or implements them can break beyond the
+// 4.0.0 change above.
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
-const sameValidPassword: Same<MDaemonValidPassword, V340ValidPassword> = true;
+const sameValidPassword: Same<MDaemonValidPassword, V400ValidPassword> = true;
 const samePasswordRequirements: Same<MDaemonPasswordRequirements, V340PasswordRequirements> = true;
 const sameSchema: Same<ISchema, V340Schema> = true;
 const sameSchemaValidationResult: Same<ISchemaValidationResult, V340SchemaValidationResult> = true;
-const sameValidate: Same<MDaemonValidate, V340Validate> = true;
+const sameValidate: Same<MDaemonValidate, V400Validate> = true;
 
-// ---- Every named function still accepts every 3.4.0 call and returns the same type ----
+// Code that only reads a result still accepts it as the 3.4.0 type.
+const readsAsV340: V340ValidPassword = {} as MDaemonValidPassword;
+
+// ---- Every named function still accepts every 3.4.0 call and returns a type 3.4.0 code can read ----
+
+// validatePassword returns exactly the 4.0.0 type.
+const validatePasswordReturn: Same<ReturnType<typeof named.validatePassword>, V400ValidPassword> = true;
 
 const namedFunctions: {
     validateDomain(domain: string, useWildCards: boolean): boolean;
@@ -129,6 +151,9 @@ const isValidPasswordArgs: Same<Parameters<typeof validate.isValidPassword>, [st
 declare function spyLike<T extends (...args: any[]) => any>(
     target: T, implementation: (...args: Parameters<T>) => ReturnType<T>): void;
 spyLike(validate.domain, (domain: string, useWildCards: boolean | null) => true);
+const v340Result: V340ValidPassword = { upper: true, lower: true, number: true, special: true, length: 5 };
+// @ts-expect-error 4.0.0: a mock of password that returns a 3.4.0-shaped result no longer compiles
+spyLike(validate.password, () => v340Result);
 
 // Calls through the interface with the 3.4.0 argument shapes.
 const v: MDaemonValidate = validate;
@@ -150,7 +175,9 @@ schema.options?.push("b");
 
 // An implementation of MDaemonValidate with the 3.4.0 parameter lists.
 const no = () => false;
-const built: MDaemonValidPassword = { upper: true, lower: true, number: true, special: true, length: 5 };
+const built: MDaemonValidPassword = { upper: true, lower: true, number: true, special: true, length: 5, controlCharacters: false };
+// @ts-expect-error 4.0.0: a result built without controlCharacters no longer compiles
+const builtAsV340: MDaemonValidPassword = { upper: true, lower: true, number: true, special: true, length: 5 };
 const mock: MDaemonValidate = {
     domain: (domain: string, useWildCards: boolean | null) => no(),
     email: (email: string, useWildCards: boolean | null) => no(),
@@ -179,7 +206,7 @@ const mock: MDaemonValidate = {
 };
 
 export {
-    sameValidPassword, samePasswordRequirements, sameSchema, sameSchemaValidationResult, sameValidate,
-    namedFunctions, asV340, domainArgs, passwordArgs, isValidPasswordArgs, domainOk, validOk,
+    sameValidPassword, samePasswordRequirements, sameSchema, sameSchemaValidationResult, sameValidate, readsAsV340, builtAsV340,
+    namedFunctions, validatePasswordReturn, asV340, domainArgs, passwordArgs, isValidPasswordArgs, domainOk, validOk,
     upper, special, mock
 };
