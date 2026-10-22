@@ -3,7 +3,7 @@
 [![npm](https://img.shields.io/npm/v/@mdaemon/validate?color=blue)](https://www.npmjs.com/package/@mdaemon/validate)
 [![license](https://img.shields.io/npm/l/@mdaemon/validate?color=green)](LICENSE)
 [![node](https://img.shields.io/node/v/@mdaemon/validate)](https://nodejs.org)
-[![install size](https://packagephobia.com/badge?p=@mdaemon/validate)](https://packagephobia.com/result?p=@mdaemon/validate)
+[![install size](https://img.shields.io/npm/unpacked-size/@mdaemon/validate)](https://packagephobia.com/result?p=@mdaemon/validate)
 [![CI](https://github.com/mdaemon-technologies/validate/actions/workflows/node.js.yml/badge.svg)](https://github.com/mdaemon-technologies/validate/actions/workflows/node.js.yml)
 
 A validation library used by MDaemon Remote Administration
