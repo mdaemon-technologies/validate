@@ -109,4 +109,5 @@ TypeScript
 .gitignore
 .github
 .package-lock.json
-rollup.config.js
+vite.config.ts
+vitest.config.ts

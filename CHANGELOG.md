@@ -5,6 +5,63 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.1] - 2026-11-10
+
+Supports Node 18 again, and moves the build and tests to new tooling. The
+public API, validation results and type declarations are unchanged:
+`dist/index.d.ts` and `dist/index.d.cts` are byte-identical to 4.0.0's. The
+three JavaScript bundles are rebuilt, so their minified contents differ. They
+still target ES2020, the CommonJS and UMD bundles are still strict mode (the
+UMD bundle's `"use strict"` is now at the top of the file rather than inside
+its factory function), and their exports object is still a plain object with
+`__esModule`. There are still no runtime dependencies.
+
+### Added
+
+- **Node 18 support.** `engines` is now `"node": ">=18"` (it was `>=20` from
+  3.5.1). The bundles never needed Node 20: `>=20` only matched the oldest Node
+  version CI tested. CI now smoke-tests the built bundles on Node 18 and 20.
+- **`CHANGELOG.md` is now included in the npm package.**
+- **README:** the supported Node versions, and a *Development* section on how
+  the package is built and tested.
+
+### Changed
+
+- **Build: Rollup → Vite 8.** `vite.config.ts` replaces `rollup.config.js` and
+  builds the same three bundles (`validate.mjs`, `validate.cjs`,
+  `validate.umd.js`) under the same names. The declarations are still bundled
+  by `rollup-plugin-dts`, now run from a small Vite plugin. The `build` script
+  type-checks `src/` first, because Vite does not.
+- **TypeScript 6 → 7.** TypeScript 7 has no JavaScript compiler API, so
+  `rollup-plugin-dts` and the declaration tests use the official
+  `@typescript/typescript6` compatibility package for it. The consumer type
+  fixtures are now also compiled by TypeScript 7's own `tsc`.
+- **Tests: Jest → Vitest 5.** The test files import their APIs from `vitest`.
+  - The built bundles are now loaded by Node itself, as consumers load them.
+  - The UMD bundle is tested as a browser global (`window.validate`) and
+    through a CommonJS loader.
+  - New tests cover the ES module bundle, which was previously untested, and
+    pin the exact list of files in `dist/`. They also pin the CommonJS and UMD
+    bundles' strict mode and plain exports object.
+- **CI.** The toolchain needs Node 22.12 or later, so the full suite runs on
+  Node 22, 24 and 26. A dependency-free `node:test` smoke suite
+  (`npm run test:smoke`) then checks the bundles built on Node 24 on Node 18
+  and 20. The publish workflow does the same before it publishes, and publishes
+  the build it tested.
+- **New `npm run typecheck` script** (TypeScript 7's `tsc --noEmit`), which
+  both workflows run, and `npm run typecheck:build`, which `npm run build` runs
+  first. Vitest does not type-check, unlike ts-jest. Both scripts call
+  TypeScript 7's own `tsc`, because the compatibility package's TypeScript 6
+  `tsc` takes over `node_modules/.bin/tsc`.
+- **Dependencies (dev only):**
+  - Added: `vite`, `vitest` and `@typescript/typescript6`.
+  - Updated: `typescript` ^6 → ^7 and `@types/node` ^20 → ^22.
+  - Removed: `jest`, `ts-jest`, `@types/jest`, `@rollup/plugin-typescript`,
+    `@rollup/plugin-terser` and `tslib`.
+  - Removed the `js-yaml` override in `package.json`, because nothing depends
+    on `js-yaml` any more.
+  - `rollup` stays, used only by `rollup-plugin-dts`.
+
 ## [4.0.0] - 2026-10-06
 
 A major release with one breaking change: `validatePassword`'s result reports
@@ -435,6 +492,7 @@ See the Git history for changes prior to 3.3.5.
 
 Version 3.0.0 (2025-04-24) converted the library to TypeScript for improved type safety and developer experience. While the source code uses TypeScript and requires dev dependencies (TypeScript, Rollup, Jest, etc.) for building and testing, the published package has **zero runtime dependencies**.
 
+[4.0.1]: https://www.npmjs.com/package/@mdaemon/validate/v/4.0.1
 [4.0.0]: https://www.npmjs.com/package/@mdaemon/validate/v/4.0.0
 [3.6.0]: https://www.npmjs.com/package/@mdaemon/validate/v/3.6.0
 [3.5.1]: https://www.npmjs.com/package/@mdaemon/validate/v/3.5.1

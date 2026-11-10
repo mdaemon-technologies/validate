@@ -18,6 +18,8 @@ The validators never throw on bad input: a value of the wrong type (`null`, a nu
 npm install @mdaemon/validate
 ```
 
+Requires Node.js 18 or later. In the browser, use the UMD bundle (see below). The bundles are ES2020, so they run in any current browser.
+
 ## Usage
 
 ### ES modules
@@ -526,6 +528,30 @@ const schema = validate.getSchema("user");
 // that name look the schema up when they run, so they use the new one
 validate.updateSchema("user", { ...schema, properties: { ...schema.properties, age: { type: "number", minimum: 18 } } });
 validateUser({ name: "John", age: 16, email: "john@example.com" }); // { valid: false, errors: ["age: Minimum value is 18"] }
+```
+
+## Development
+
+The source is TypeScript in `src/`. Vite bundles it into `dist/validate.mjs` (ES module), `dist/validate.cjs` (CommonJS) and `dist/validate.umd.js` (browser), and `rollup-plugin-dts` bundles the type declarations into `dist/index.d.ts` and `dist/index.d.cts`. Vitest runs the tests. Development needs Node 22.12 or later, because Vitest does; the published package still supports Node 18.
+
+TypeScript 7 type-checks the source. TypeScript 7 has no JavaScript compiler API, so the declaration bundler and the type tests get one from the `@typescript/typescript6` compatibility package.
+
+A small `node:test` smoke suite in `smoke/` checks all three built bundles: the ES module and CommonJS bundles through the package's `exports` map, and the UMD bundle as a browser global. It needs no dependencies, so CI also runs it on Node 18 and 20, where the toolchain itself cannot run.
+
+### Building and running tests
+
+```bash
+# Type-check the source, then build dist/
+npm run build
+
+# Type-check the source, tests and configs
+npm run typecheck
+
+# Run the Vitest suite (several tests read dist/, so build first)
+npm test
+
+# Smoke-test the three built bundles with node:test
+npm run test:smoke
 ```
 
 ## Changelog

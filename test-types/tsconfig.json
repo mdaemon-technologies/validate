@@ -1,0 +1,16 @@
+{
+  // Compiles the consumer fixtures with the native TypeScript 7 compiler, as a
+  // consumer resolves the package: by name, through package.json's "exports"
+  // (self-reference), as both CommonJS (.cts) and ES module (.mts) code.
+  // src/types.test.ts runs it, and also checks the fixtures through the
+  // TypeScript 6 API with the same options.
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": true,
+    "target": "ES2020",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "types": []
+  },
+  "files": ["consumer.cts", "consumer.mts", "compat-3.4.mts"]
+}

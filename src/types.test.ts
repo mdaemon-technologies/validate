@@ -6,12 +6,21 @@
  * and an ES module (.mts) consumer. The declaration files themselves are then
  * pinned to exactly the public API, with no `any` in exported signatures.
  */
-import fs from "fs";
-import path from "path";
-import ts from "typescript";
+import { execSync, spawnSync } from "node:child_process";
+import fs from "node:fs";
+import { createRequire } from "node:module";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+// TypeScript 7 (the native compiler) has no JavaScript compiler API, so the
+// checks below use the official compatibility package, which provides the
+// TypeScript 6 API. The fixtures are also compiled by TypeScript 7's own tsc.
+import ts from "@typescript/typescript6";
+import { describe, expect, it } from "vitest";
 import { NAMED_EXPORTS, TYPE_EXPORTS } from "../test-types/public-api";
 
-const DIST = path.resolve(__dirname, "../dist");
+const require = createRequire(import.meta.url);
+const ROOT = fileURLToPath(new URL("..", import.meta.url));
+const DIST = path.join(ROOT, "dist");
 const DECLARATION_FILES = ["index.d.ts", "index.d.cts"];
 
 const compilerOptions: ts.CompilerOptions = {
@@ -24,7 +33,7 @@ const compilerOptions: ts.CompilerOptions = {
 };
 
 function typeCheck(fixture: string): string[] {
-  const file = path.resolve(__dirname, "../test-types", fixture);
+  const file = path.join(ROOT, "test-types", fixture);
   const program = ts.createProgram([file], compilerOptions);
   return ts.getPreEmitDiagnostics(program).map(d => ts.flattenDiagnosticMessageText(d.messageText, "\n"));
 }
@@ -71,6 +80,29 @@ describe("published type declarations", () => {
   it("still compile code written against the 3.4.0 declarations, apart from the 4.0.0 change", () => {
     expect(typeCheck("compat-3.4.mts")).toEqual([]);
   }, 30000);
+
+  // @typescript/typescript6 installs TypeScript 6 as @typescript/old, whose
+  // `tsc` bin can win node_modules/.bin/tsc. The scripts must name TypeScript
+  // 7's own bin, so the build and `npm run typecheck` really use TypeScript 7.
+  it.each(["typecheck", "typecheck:build"])("npm run %s uses TypeScript 7", script => {
+    const output = execSync(`npm run --silent ${script} -- --version`, { cwd: ROOT, encoding: "utf8", timeout: 50000 });
+    expect(output.trim()).toMatch(/^Version 7\./);
+  }, 60000);
+
+  // The same fixtures, compiled by the native TypeScript 7 compiler that
+  // consumers on TypeScript 7 use (test-types/tsconfig.json).
+  it("type-check for every fixture with TypeScript 7's tsc", () => {
+    const pkg = require("typescript/package.json");
+    const tsc = path.join(path.dirname(require.resolve("typescript/package.json")), pkg.bin.tsc);
+    // A timeout: Vitest's own cannot interrupt a synchronous spawn.
+    const result = spawnSync(process.execPath, [tsc, "-p", path.join(ROOT, "test-types", "tsconfig.json")], {
+      encoding: "utf8",
+      timeout: 50000
+    });
+    expect(pkg.version).toMatch(/^7\./);
+    expect(result.stdout + result.stderr).toBe("");
+    expect(result.status).toBe(0);
+  }, 60000);
 
   it("are identical for both module systems", () => {
     const [esm, cjs] = DECLARATION_FILES.map(file => fs.readFileSync(path.join(DIST, file), "utf8"));

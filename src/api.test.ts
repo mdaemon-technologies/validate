@@ -3,8 +3,12 @@
  * object's aliases, in the source and in the built CommonJS bundle (the last
  * test requires a fresh `npm run build`).
  */
+import { createRequire } from "node:module";
+import { describe, expect, it } from "vitest";
 import * as api from "../src/validate";
 import { DEFAULT_ALIASES, NAMED_EXPORTS } from "../test-types/public-api";
+
+const require = createRequire(import.meta.url);
 
 function namedExports(module: object): string[] {
   return Object.keys(module).filter(key => key !== "default" && key !== "__esModule").sort();
@@ -27,7 +31,6 @@ describe("public API surface", () => {
   });
 
   it("is mirrored by the built CommonJS bundle", () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const bundle = require("../dist/validate.cjs");
     expect(namedExports(bundle)).toEqual(NAMED_EXPORTS);
     expect(Object.keys(bundle.default).sort()).toEqual(Object.keys(DEFAULT_ALIASES).sort());

@@ -1,6 +1,10 @@
 # Stages a new npm version when a GitHub Release is published. npm trusted publishing (OIDC)
 # authenticates the job, so no npm token is stored. A maintainer then approves the staged
 # version with 2FA on npmjs.com (or `npm stage approve`) before it is public.
+#
+# The package supports Node 18 and later, but the toolchain needs Node 22.12. So the bundles
+# are built and fully tested on Node 24, smoke-tested on the older versions, and that same
+# build is what gets published.
 
 name: Publish to npm
 
@@ -10,10 +14,9 @@ on:
 
 permissions:
   contents: read
-  id-token: write   # lets npm exchange a GitHub OIDC token for a short-lived publish token
 
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,14 +24,61 @@ jobs:
     - uses: actions/setup-node@v7
       with:
         node-version: 24.x
-        registry-url: https://registry.npmjs.org
         cache: 'npm'
-    - run: npm install -g npm@latest   # trusted publishing and staged publishing need a recent npm
-    - run: npm ci
-    - run: npm run build
-    - run: npm test
     - name: Check the release tag matches package.json
       env:
         TAG: ${{ github.event.release.tag_name }}
       run: test "v$(node -p "require('./package.json').version")" = "$TAG"
+    - run: npm ci
+    - run: npm run build
+    - run: npm run typecheck
+    - run: npm test
+    - run: npm run test:smoke
+    - uses: actions/upload-artifact@v7
+      with:
+        name: dist
+        path: dist/
+        if-no-files-found: error
+
+  smoke:
+    needs: build
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-node@v7
+      with:
+        node-version: ${{ matrix.node-version }}
+    - uses: actions/download-artifact@v8
+      with:
+        name: dist
+        path: dist/
+    # No npm ci: the smoke tests use only node:test and the built bundles.
+    - run: npm run test:smoke
+
+  publish:
+    needs: [build, smoke]
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write   # lets npm exchange a GitHub OIDC token for a short-lived publish token
+
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24.x
+        registry-url: https://registry.npmjs.org
+    - run: npm install -g npm@latest   # trusted publishing and staged publishing need a recent npm
+    # The bundles built and tested above. The package has no build or
+    # prepublish scripts, so nothing rebuilds them before packing.
+    - uses: actions/download-artifact@v8
+      with:
+        name: dist
+        path: dist/
     - run: npm stage publish

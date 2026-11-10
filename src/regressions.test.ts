@@ -1,3 +1,4 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createSchemaValidator,
   isValidPassword,
@@ -262,7 +263,7 @@ describe("password validation", () => {
   });
 
   it("does not log when rejecting min >= max", () => {
-    const spy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
     expect(setPasswordRequirements({ min: 30, max: 20 })).toBe(false);
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();

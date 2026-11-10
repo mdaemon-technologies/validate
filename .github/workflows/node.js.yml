@@ -1,5 +1,10 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# Builds the package and tests it across every supported version of node.
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+#
+# The package supports Node 18 and later, but the toolchain does not: Vitest
+# needs Node 22.12. So the full suite runs where the toolchain does, and the
+# bundles it builds are smoke-tested on the older versions with nothing but
+# node:test.
 
 name: Node.js CI
 
@@ -16,7 +21,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [20.x, 22.x, 24.x, 26.x]
+        node-version: [22.x, 24.x, 26.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -27,5 +32,38 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - run: npm ci
-    - run: npm run build --if-present
+    - run: npm run build
+    - run: npm run typecheck
     - run: npm test
+    - run: npm run test:smoke
+    - name: Keep the bundles for the older Node versions
+      if: matrix.node-version == '24.x'
+      uses: actions/upload-artifact@v7
+      with:
+        name: dist
+        path: dist/
+        if-no-files-found: error
+
+  smoke:
+    needs: build
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - uses: actions/checkout@v7
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v7
+      with:
+        node-version: ${{ matrix.node-version }}
+    # The bundles built and tested above, replacing the committed ones, which
+    # may be stale on a pull request.
+    - uses: actions/download-artifact@v8
+      with:
+        name: dist
+        path: dist/
+    # No npm ci: the smoke tests use only node:test and the built bundles.
+    - run: npm run test:smoke
