@@ -152,10 +152,11 @@ export function setPasswordRequirements(obj: Partial<MDaemonPasswordRequirements
   if (typeof obj.number !== "undefined") {
       next.requireNumber = !!obj.number;
   }
-  if (typeof obj.min === "number" && obj.min > 0) {
+  // A length below 1 is ignored (the documented "no limit").
+  if (typeof obj.min === "number" && obj.min >= 1) {
       next.requireMinLength = obj.min;
   }
-  if (typeof obj.max === "number" && obj.max > 0) {
+  if (typeof obj.max === "number" && obj.max >= 1) {
       next.requireMaxLength = obj.max;
   }
 
@@ -188,9 +189,9 @@ export function resetPasswordRequirements(): void {
 */
 function resolveLengthLimit(override: number | undefined, configured: number): number | undefined {
   if (typeof override === "number") {
-      return override > 0 ? override : undefined;
+      return override >= 1 ? override : undefined;
   }
-  return configured > 0 ? configured : undefined;
+  return configured >= 1 ? configured : undefined;
 }
 
 /**

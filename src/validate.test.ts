@@ -189,8 +189,9 @@ describe("validate has method headerName", () => {
     expect(validate.headerName(":test")).toBe(false);
     expect(validate.headerName("test")).toBe(true);
     expect(validate.headerName("test-t")).toBe(true);
-    expect(validate.headerName("test-")).toBe(false);
-    expect(validate.headerName("test*test")).toBe(false);
+    expect(validate.headerName("test-")).toBe(true);
+    expect(validate.headerName("test*test")).toBe(true);
+    expect(validate.headerName("test test")).toBe(false);
   });
 
   it("validateHeaderName is an alias for validate.headerName", () => {

@@ -17,8 +17,9 @@
 *    USA
 */
 
-// Patterns shared by more than one module (internal; not part of the public API).
+// Shared patterns (internal; not part of the public API).
 // Keep hoisted regexes free of the /g flag: it would make .test() stateful.
 
-// Letters, digits and inner hyphens: a DNS label (network.ts) or an HTTP header name (headers.ts).
+// Letters, digits and inner hyphens: a DNS label (network.ts). HTTP header names
+// (headers.ts) are RFC 9110 tokens, which allow more, so headers.ts has its own.
 export const HYPHENATED_ALPHANUMERIC = /^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/;

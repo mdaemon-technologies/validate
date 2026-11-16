@@ -17,45 +17,58 @@
 *    USA
 */
 
-import { hasControlCharacters } from "./characters";
-import { HYPHENATED_ALPHANUMERIC } from "./patterns";
+// RFC 9110 §5.1: field-name = token = 1*tchar, where tchar is
+// "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~" / DIGIT / ALPHA.
+const HEADER_NAME = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
+
+// RFC 9110 §5.5: field-value = *field-content, built from HTAB, SP, VCHAR and
+// obs-text (U+0080-U+00FF), the same characters node:http allows. Anything above
+// U+00FF is rejected: written as latin1, U+010D U+010A would become CR LF.
+const HEADER_VALUE = /^[\t\x20-\x7e\x80-\xff]*$/;
 
 /**
-* Validates that a header name is a valid string without control characters
-* and only contains alphanumeric characters or hyphens, with no leading/trailing hyphens.
+* Validates that a header name is an RFC 9110 token: one or more letters,
+* digits or the symbols ! # $ % & ' * + - . ^ _ ` | ~, in any order.
 *
 * @param {string} name - The header name to validate
 * @returns {boolean} True if the header name is valid
 */
 export function validateHeaderName(name: string): boolean {
-  return typeof name === "string" && HYPHENATED_ALPHANUMERIC.test(name);
+  return typeof name === "string" && HEADER_NAME.test(name);
 }
 
 /**
-* Validates that a header value string does not contain control characters.
+* Validates that a header value contains only HTAB, U+0020-U+007E and
+* U+0080-U+00FF. Any other control character (CR, LF, NUL, ...), DEL and
+* anything above U+00FF are rejected. An empty value is valid, and so are
+* leading and trailing spaces or tabs.
 *
 * @param {string} value - The header value to validate
-* @returns {boolean} True if the header value is valid without control characters
+* @returns {boolean} True if the header value is valid
 */
 export function validateHeaderValue(value: string): boolean {
-  return typeof value === "string" && !!value.length && !hasControlCharacters(value);
+  return typeof value === "string" && HEADER_VALUE.test(value);
 }
 
 /**
-* Validates that a header string contains a valid name and value.
-* Rejects any control character, including a CR, LF or tab around the name or value.
+* Validates a header field line, "name:value" (RFC 9112 §5.1). The name must be
+* a token that starts the line and ends at the colon, with no whitespace
+* before or after it. The value may be empty, and may have spaces or tabs (OWS)
+* around it. Nothing is trimmed, so a CR, LF or any other character outside
+* the allow-lists is rejected wherever it appears.
 *
 * @param {string} header - The header string to validate
 * @returns {boolean} True if the header contains a valid name and value
 */
 export function validateHeader(header: string): boolean {
-  // Check the whole header first: trimming the name and value would hide a
-  // leading or trailing CR, LF or tab.
-  if (typeof header !== "string" || header.indexOf(":") === -1 || hasControlCharacters(header)) {
+  if (typeof header !== "string") {
       return false;
   }
 
-  const name = header.substring(0, header.indexOf(":")).trim();
-  const value = header.substring(header.indexOf(":") + 1).trim();
-  return validateHeaderName(name) && validateHeaderValue(value);
+  const colon = header.indexOf(":");
+  // The value's allow-list includes SP and HTAB, so the OWS around the value
+  // needs no stripping: it is valid exactly when the stripped value is.
+  return colon !== -1 &&
+      validateHeaderName(header.substring(0, colon)) &&
+      validateHeaderValue(header.substring(colon + 1));
 }

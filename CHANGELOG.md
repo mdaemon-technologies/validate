@@ -7,59 +7,210 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [4.1.0] - 2026-11-16
 
-`validateEmailAddress` (`validate.email`) now checks the domain part with
-`validateDomain`'s label rules, and accepts IPv6 address literals and quoted
-pairs in a quoted local part ([#1]). Validation output changes for some inputs
-(see *Migration notes*). There are no API or TypeScript changes, and still no
-runtime dependencies.
+Brings every validator in line with the standard it implements. Issue [#1]
+reported that `validateEmailAddress` (`validate.email`) disagreed with
+`validateDomain` and rejected IPv6 address literals and quoted pairs. Fixing it
+led to a spec-conformance audit of the whole library, and this release fixes
+what the audit found: in email addresses, domains, IP addresses, HTTP headers,
+Windows paths, LDAP DNs, phone numbers, schemas and passwords.
+
+Validation output changes for many inputs, in both directions (see *Migration
+notes*). Several fixes close security gaps (see *Security*). There are no API or
+TypeScript changes (only JSDoc comments differ in the declarations), and still
+no runtime dependencies. One change can stop existing code at startup:
+registering a schema with a malformed constraint, such as `minLength: "5"`,
+now throws a `TypeError` instead of silently ignoring the constraint.
 
 Reported by [trackoor](https://github.com/trackoor)
 (<https://ucsbplse.github.io/>) in [#1].
 
 **Migration notes:**
 
-- **Now rejected:**
-  - a domain label that starts or ends with a hyphen (`"test@-iana.org"`,
-    `"test@iana-.com"`).
-  - a domain label longer than 63 characters.
-- **Now accepted:**
-  - a last domain label that contains digits or hyphens, such as a punycode
-    top-level domain (`"test@example.xn--p1ai"`), or is one character long
-    (`"t@a.b"`). It still can't be all digits, so `"t@1.2.3.4"` is still
-    rejected; use the address literal `"t@[1.2.3.4]"`.
-  - an IPv6 address literal (`"user@[IPv6:2001:db8::1]"`,
-    `"user@[IPv6:::ffff:192.0.2.1]"`). The `IPv6:` tag matches in any case. A
-    prefix length or zone ID (`"user@[IPv6:fe80::1%eth0]"`) is rejected.
-  - a quoted pair in a quoted local part: a backslash and a printable ASCII
-    character (`"\"a\\\"b\"@iana.org"`, `"\"a\\\\b\"@iana.org"`).
-- **Unchanged:**
-  - a trailing dot in the domain (`"t@example.com."`) and a single-label domain
-    (`"t@localhost"`) are still rejected, although `validateDomain` accepts a
-    trailing dot.
-  - an empty quoted local part (`"\"\"@iana.org"`) is still rejected.
-  - IPv4 address literals, the 254-character limit, control-character
-    rejection, trimming, and wildcard mode (`useWildCards`).
-
-### Fixed
-
-- **`validateEmailAddress`'s domain part disagreed with `validateDomain`.** It
-  accepted labels with a leading or trailing hyphen and labels over 63
-  characters, and required the last label to be two or more letters. The
-  address is now split at its last `@` (a quoted local part may contain `@`),
-  and a host-name domain must pass `validateDomain`, with no trailing dot and a
-  last label that is not all digits (RFC 3696 section 2).
-- **`validateEmailAddress` rejected IPv6 address literals.** Only IPv4 literals
-  were accepted. An `[IPv6:...]` literal (RFC 5321 section 4.1.3) is now
-  checked with `validateIPv6`, after making sure it holds only hex digits,
-  colons and dots.
-- **`validateEmailAddress` rejected quoted pairs.** A quoted local part could
-  not contain a backslash, so an escaped `"` or `\` was rejected. RFC 5321's
-  quoted pairs (`\` and a character from U+0020 to U+007E) are now accepted.
+- **`validateEmailAddress`**
+  - Now rejected:
+    - a domain label that starts or ends with a hyphen (`"test@-iana.org"`,
+      `"test@iana-.com"`), or is longer than 63 characters.
+    - a local part longer than 64 octets, and an address longer than 254
+      octets, both counted in UTF-8 (`"é".repeat(33) + "@example.com"`).
+    - C1 control characters (U+0080–U+009F) and unpaired UTF-16 surrogates
+      anywhere (`"us\u0085er@example.com"`, `"\uD800@example.com"`).
+    - whitespace other than ASCII spaces at the start or end
+      (`"user@example.com\u2028"`, `"\u00A0user@example.com"`). It used to be
+      trimmed and the address accepted, though the caller keeps the untrimmed
+      string; 3.6.0 had listed this trimming as unchanged. ASCII spaces are
+      still trimmed.
+    - wildcard patterns that can't match an address: misplaced dots in the
+      local part (`".*@x.com"`, `"a..*@x.com"`), an all-numeric last label
+      (`"*@x.123"`), a `#` in the domain (`"a*@x#.com"`), a domain label over
+      63 characters, or a local part over 64 octets.
+  - Now accepted:
+    - a last domain label with digits or hyphens, such as a punycode top-level
+      domain (`"test@example.xn--p1ai"`), or one character long (`"t@a.b"`).
+      It still can't be all digits: `"t@1.2.3.4"` is rejected; use the
+      address literal `"t@[1.2.3.4]"`.
+    - internationalized domains (`"user@bücher.de"`, `"用户@例子.广告"`).
+    - IPv6 address literals (`"user@[IPv6:2001:db8::1]"`), with the tag in any
+      case, and leading zeros in an embedded IPv4 part
+      (`"user@[IPv6:::ffff:001.2.3.4]"`). They follow RFC 5321's IPv6 grammar,
+      which is stricter than RFC 4291's: `::` must stand for at least two
+      groups, so `"u@[IPv6:1::3:4:5:6:7:8]"` is rejected. A prefix length or
+      zone ID is rejected too.
+    - quoted pairs in a quoted local part (`"\"a\\\"b\"@iana.org"`).
+    - with `useWildCards`, a real address that contains `*` or `?` but isn't a
+      valid pattern (`"\"what?\"@example.com"`, `"user?@[192.0.2.1]"`).
+    - a valid address with surrounding whitespace that took it past 254
+      characters; the limit is now checked after trimming.
+  - Unchanged: a trailing dot (`"t@example.com."`), a single-label domain
+    (`"t@localhost"`), an empty quoted local part (`"\"\"@iana.org"`) and
+    address literals with other tags are still rejected.
+- **`validateDomain`**
+  - Now rejected: an all-numeric last label (`"1.2.3.4"`, `"example.123"`,
+    and `"*.123"` with wildcards).
+  - Now accepted: internationalized domain names (`"bücher.de"`), checked in
+    their A-label form, also in wildcard mode when the name has no wildcard
+    characters. Labels with characters that IDNA would map to others
+    (fullwidth letters, superscripts) are rejected, as are wildcard patterns
+    with non-ASCII characters.
+- **`validateIPAddress`, `validateIPv4`, `validateIPv6`**
+  - Now rejected: leading zeros in an IPv4 address with a prefix length
+    (`"010.0.0.1/8"`); whitespace other than ASCII spaces around an IPv6
+    address (`"::1\u2028"`, `"\uFEFF::1"`) and a space before its prefix
+    length (`"::1 /64"`); IPv4 wildcard octets that can't match 0–255
+    (`"3##.*.*.*"`, `"0#.1.1.1"`).
+  - Now accepted: spaces after an IPv6 prefix length (`"::1/64 "`); IPv6
+    wildcard patterns with seven groups and `::` at one end
+    (`"::1:2:3:4:5:6:*"`).
+- **`validateHeader`, `validateHeaderName`, `validateHeaderValue`**
+  - Now rejected: characters above U+00FF in a value
+    (`"X-Test: \u010d\u010a..."`); whitespace before the colon or before the
+    name (`"X-Test : v"`, `" X-Test: v"`). This reverses 3.6.0, which kept
+    trimming spaces around the name; RFC 9112 requires a server to reject them.
+  - Now accepted: tabs in and around a value (`"X-Test:\tvalue"`,
+    `"X-Test: a\tb"`); empty values (`"X-Test:"`, `validateHeaderValue("")`);
+    any RFC 9110 token as a name (`"-X-Test"`, `"X_Custom.Header~1"`).
+  - Unchanged: CR, LF, NUL, other C0 controls and DEL are still rejected,
+    including obs-fold.
+- **`validateWindowsFileName`, `validateWindowsPath`**
+  - Now rejected: `"."` and `".."` as a file name; reserved device names in
+    any case and with any extension, as a name or path segment (`"CON"`,
+    `"nul.txt"`, `"C:\\a\\COM1"`, `"LPT¹"`); names and segments ending in a
+    period or space (`"a."`, `"C:\\a \\b"`); `\\.\` device paths
+    (`"\\\\.\\PhysicalDrive0"`); UNC paths without a share (`"\\\\server"`)
+    or with `.` or `..` as the server or share (`"\\\\server\\..\\x"`);
+    names or segments over 255 characters and paths over 32,767.
+  - Now accepted: file names made of Unicode spaces such as U+00A0, which
+    Windows doesn't strip (only U+0020 counts as blank).
+- **`validateLdapDN`** is now an RFC 4514 parser.
+  - Now accepted: escaped specials (`"cn=Smith\\, John,dc=example,dc=com"`),
+    any attribute type in any order (`"CN=Steve Kille,O=Isode Limited,C=GB"`,
+    numeric OIDs), hex-string values (`"1.3.6.1.4.1.1466.0=#04024869,..."`),
+    multi-valued RDNs with any types (`"o=a+c=b"`), spaces after commas between several
+    OUs, and empty values for every attribute type.
+  - Now rejected: unescaped `+`, `;`, `<`, `>` and `"` in values (`"cn=a+b"`,
+    `"cn=a;b"`); `;` as a separator; bad escapes (`"cn=a\\"`, `"cn=a\\zz"`)
+    and hex escapes that aren't valid UTF-8 (`"cn=\\C4"`); bad hex strings
+    (`"cn=#zz"`); stray commas (`",ou=a"`, `"OU=a,"`); unpaired surrogates.
+  - Unchanged: spaces around `=`, `,` and values are still tolerated, the
+    empty DN is still rejected, and control characters are still rejected.
+- **`validatePhoneNumber`**
+  - Now rejected: more than 15 digits (the E.164 maximum,
+    `"+00000000000000000000"`); a `+` not followed directly by a digit from 1
+    to 9 (`"+ 12345"`, `"+0 123 456 7890"`); unbalanced, empty, nested or
+    repeated parentheses (`")12345("`, `"(1)(2)345"`); a parenthesized group
+    that isn't followed by digits (`"12345 (6)"`, `"(12345)"`); leading,
+    trailing or doubled separators (`"-12345"`, `"12-34--5"`).
+  - Now accepted: formatted numbers longer than 20 characters with at most 15
+    digits (`"+49 (0) 30 1234 5678 90"`); a leading space before `+`.
+- **Schemas (`createSchemaValidator`, `updateSchema`)**
+  - Now throws `TypeError` at registration (a rejected `updateSchema` keeps
+    the schema already registered): a `pattern` that is not a string or a
+    RegExp (`pattern: 5`); a `minLength`, `maxLength`, `minimum`, `maximum`,
+    `minItems` or `maxItems` that is not a number, or is NaN
+    (`minLength: "5"`); a `type` that is `""` or unknown; `options` that is
+    not an array; `validate` that is not a function; nesting deeper than 1000
+    objects, where each schema and each `properties` object counts, so 500
+    levels of nested `properties` or 1000 of `arraySchema`. (Before, schemas
+    a few thousand levels deep registered and deeper ones threw `RangeError`.)
+    The other constraints used to be ignored silently, so a schema with one of
+    them checked less than it said.
+  - Now enforced: a RegExp `pattern` (`pattern: /^a$/i`), which used to be
+    copied as `{}` so every string passed. It is copied without the `g` and
+    `y` flags, and `getSchema` returns it as a RegExp.
+  - Now invalid: NaN fails `minimum` and `maximum`; holes in a sparse array
+    are checked as `undefined` against `arraySchema`.
+  - A `null` constraint (`type: null`, `minLength: null`) is treated as absent
+    and left out of the registered copy, as a `null` `properties` already was.
+  - A custom `validate` is called with `this` undefined. It used to get the
+    registered schema, and could change it.
+  - Validators never throw on hostile values (revoked Proxies, throwing
+    getters), on unprintable errors and options, or when a deep schema runs
+    out of stack; they report `"Value could not be read"`, `"a value that
+    cannot be displayed"` or `"Value could not be validated: the stack ran
+    out"` instead.
+- **Passwords:** a `min` or `max` below 1, such as 0.5, is ignored as the
+  README says, in `setPasswordRequirements` and in `isValidPassword`'s
+  arguments. It was enforced.
 
 ### Changed
 
 - The email check no longer uses a single backtracking-prone regex. Each part
   is checked by a linear-time pattern or by `validateDomain`.
+- The README documents each validator's rules, including the deliberate
+  choices that differ from the full standards: only absolute Windows paths,
+  ASCII-only character classes in passwords, and the leniencies kept in LDAP
+  DNs.
+
+### Fixed
+
+- **Email addresses (issue [#1]).** The domain part is now checked by
+  `validateDomain`, after splitting at the last `@`; `[IPv6:...]` literals and
+  quoted pairs are accepted; length limits count UTF-8 octets as RFC 5321 and
+  RFC 6531 require; C1 controls are rejected as RFC 6530 section 10.1 requires
+  for mailbox names. `hasControlCharacters` is unchanged: C1 characters are
+  legal in Windows names, HTTP obs-text and LDAP values.
+- **Domains:** internationalized names are supported, and a last label made
+  only of digits is rejected (RFC 1123 section 2.1).
+- **HTTP headers:** names follow RFC 9110's `token` rule, and values allow
+  tabs and may be empty.
+- **Windows paths:** follow Microsoft's naming rules for device names,
+  trailing periods and spaces, `.` and `..`, UNC shares and lengths.
+- **LDAP DNs:** follow RFC 4514 instead of a fixed CN/OU/DC shape.
+- **Phone numbers:** the limit is on digits, not characters, and the
+  structure is checked.
+- **Wildcard patterns** that can't match anything are rejected, in IP and
+  email patterns.
+- **Schemas:** malformed constraints are rejected at registration instead of
+  being ignored, RegExp patterns work, NaN fails a range check, and sparse
+  arrays are checked in full.
+- **Passwords:** `min` and `max` below 1 are ignored, as documented.
+
+### Security
+
+- **`validateHeaderValue` and `validateHeader` accepted characters above
+  U+00FF.** Written to a socket as latin1, `"\u010d\u010a"` becomes CR LF, so a
+  value that passed could inject a header. Values are now limited to tab,
+  U+0020–U+007E and U+0080–U+00FF, as RFC 9110 section 5.5 allows.
+- **`validateHeader` accepted whitespace before the colon.** RFC 9112 section
+  5.1 requires a server to reject it, because front ends and back ends parse it
+  differently (request smuggling).
+- **`validateIPAddress` accepted leading zeros with a prefix length.**
+  `"010.0.0.1/8"` passed, though `"010.0.0.1"` did not; some parsers read
+  `010` as octal 8, so an access rule could cover a different network than it
+  appears to.
+- **`validateIPv6` and `validateEmailAddress` accepted U+2028 and other
+  Unicode whitespace around an address.** It was trimmed before the check, but
+  the caller keeps the untrimmed string, and JavaScript treats U+2028 as a line
+  terminator. Only ASCII spaces are trimmed now.
+- **`validateWindowsFileName` accepted `".."`**, so a validated name joined to
+  a directory could climb out of it, and both Windows validators accepted
+  device names (`"NUL"`, `"COM1"`) and `\\.\` device paths
+  (`"\\\\.\\PhysicalDrive0"`).
+- **`validateLdapDN` threw `RangeError` on input of several megabytes.** It is
+  now an iterative parser that runs in linear time and never throws.
+- **Schema validators threw on hostile values,** such as a revoked Proxy or an
+  object with a throwing getter, and a custom `validate` could change the
+  registered schema through `this`, even adding a cycle. Validation now
+  reports these as errors, and `validate` gets no `this`.
 
 ## [4.0.1] - 2026-11-10
 

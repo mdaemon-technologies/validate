@@ -44,23 +44,29 @@ declare function hasNumber(str: string): boolean;
 declare function hasSpecial(str: string): boolean;
 
 /**
-* Validates that a header name is a valid string without control characters
-* and only contains alphanumeric characters or hyphens, with no leading/trailing hyphens.
+* Validates that a header name is an RFC 9110 token: one or more letters,
+* digits or the symbols ! # $ % & ' * + - . ^ _ ` | ~, in any order.
 *
 * @param {string} name - The header name to validate
 * @returns {boolean} True if the header name is valid
 */
 declare function validateHeaderName(name: string): boolean;
 /**
-* Validates that a header value string does not contain control characters.
+* Validates that a header value contains only HTAB, U+0020-U+007E and
+* U+0080-U+00FF. Any other control character (CR, LF, NUL, ...), DEL and
+* anything above U+00FF are rejected. An empty value is valid, and so are
+* leading and trailing spaces or tabs.
 *
 * @param {string} value - The header value to validate
-* @returns {boolean} True if the header value is valid without control characters
+* @returns {boolean} True if the header value is valid
 */
 declare function validateHeaderValue(value: string): boolean;
 /**
-* Validates that a header string contains a valid name and value.
-* Rejects any control character, including a CR, LF or tab around the name or value.
+* Validates a header field line, "name:value" (RFC 9112 §5.1). The name must be
+* a token that starts the line and ends at the colon, with no whitespace
+* before or after it. The value may be empty, and may have spaces or tabs (OWS)
+* around it. Nothing is trimmed, so a CR, LF or any other character outside
+* the allow-lists is rejected wherever it appears.
 *
 * @param {string} header - The header string to validate
 * @returns {boolean} True if the header contains a valid name and value
@@ -68,8 +74,9 @@ declare function validateHeaderValue(value: string): boolean;
 declare function validateHeader(header: string): boolean;
 
 /**
-* Validates if a given string is a valid LDAP distinguished name (DN).
-* Rejects any control character, not only CR and LF.
+* Validates if a given string is a valid LDAP distinguished name (DN), as defined
+* by RFC 4514. Accepts spaces around "=", "," and "+" and empty attribute values;
+* rejects the empty DN and any control character.
 *
 * @param {string} str - The string to validate.
 * @returns {boolean} True if the string is a valid LDAP DN, false otherwise.
@@ -78,10 +85,13 @@ declare function validateLdapDN(str: string): boolean;
 
 /**
 * Validates if an email address is valid.
-* The domain part is a host name that passes validateDomain (with no trailing dot
-* and a last label that is not all digits), or an IPv4 or IPv6 address literal.
-* Supports wildcard matching if useWildCards is true.
-* Rejects any control character, including a leading or trailing CR, LF or tab.
+* The domain part is a host name that passes validateDomain (with no trailing dot),
+* or an IPv4 or IPv6 address literal. The length limits (64 for the local part,
+* 254 in all) count UTF-8 octets.
+* Supports wildcard matching if useWildCards is true; a real address that contains
+* a wildcard character is still valid.
+* Rejects any control character (C0, DEL or C1), including a leading or trailing
+* CR, LF or tab.
 *
 * @param {string} email - The email address to validate
 * @param {boolean} useWildCards - Whether to allow wildcard matching
@@ -90,7 +100,9 @@ declare function validateLdapDN(str: string): boolean;
 declare function validateEmailAddress(email: string, useWildCards?: boolean | null): boolean;
 /**
 * Validates if a domain string is valid.
-* Supports wildcard matching if useWildCards is true.
+* Labels are letters, digits and inner hyphens, or U-labels ("bücher"), which
+* are checked in their A-label ("xn--") form. The last label is not all digits.
+* Supports wildcard matching if useWildCards is true; patterns are ASCII only.
 *
 * @param {string} domain - The domain to validate
 * @param {boolean} useWildCards - Whether to allow wildcard matching
@@ -254,7 +266,8 @@ declare function getSchema(name: string): ISchema | undefined;
 * @param {string} name - The schema name.
 * @param {ISchema} schema - The schema to register.
 * @throws {TypeError} If the name is not a non-empty string, or the schema is
-* malformed (a non-object sub-schema, an unknown type, an invalid pattern, or a cycle).
+* malformed (a non-object sub-schema, a wrongly typed constraint, an unknown
+* type, an invalid pattern, a cycle, or nesting deeper than 1000 levels).
 */
 declare function updateSchema(name: string, schema: ISchema): void;
 /**
@@ -271,6 +284,8 @@ declare function createSchemaValidator(name: string, schema: ISchema): (input: a
 
 /**
 * Validates if a given string is a valid Windows file name.
+* Rejects reserved characters, control characters, reserved device names
+* (CON, NUL, COM1, ...), names that end in a period or a space, and names longer than 255 characters.
 *
 * @param {string} str - The string to validate.
 * @returns {boolean} True if valid, false otherwise.
@@ -278,6 +293,11 @@ declare function createSchemaValidator(name: string, schema: ISchema): (input: a
 declare function validateWindowsFileName(str: string): boolean;
 /**
 * Validates if a given string is a valid Windows file path.
+* Accepts only fully qualified paths: a drive ("C:\dir\file") or a UNC path with
+* a server and a share ("\\server\share\file"). Each segment after the drive or
+* share follows validateWindowsFileName's rules, except that "." and ".." are allowed.
+* Device ("\\.\") and extended-length ("\\?\") paths are not supported. A segment
+* is at most 255 characters and the path at most 32,767 (not counting "*" in wildcard mode).
 *
 * @param {string} str - The path string to validate.
 * @param {boolean} [useWildCards=false] - Whether to allow wildcard characters in the path.

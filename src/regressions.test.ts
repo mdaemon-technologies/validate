@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createSchemaValidator,
+  hasControlCharacters,
   isValidPassword,
   ISchema,
   resetPasswordRequirements,
@@ -159,11 +160,12 @@ describe("validateHeader control characters", () => {
     expect(validateHeader("\r\nX-Test: value")).toBe(false);
     expect(validateHeader("X-Test\r\n: value")).toBe(false);
     expect(validateHeader("X-Test:\r\n value")).toBe(false);
-    expect(validateHeader("X-Test:\tvalue")).toBe(false);
+    expect(validateHeader("X-Test:\tvalue")).toBe(true); // HTAB is OWS (RFC 9112 section 5.1)
   });
 
-  it("still trims spaces around the name and value", () => {
-    expect(validateHeader(" X-Test : value ")).toBe(true);
+  it("allows spaces around the value but not around the name", () => {
+    expect(validateHeader("X-Test: value ")).toBe(true);
+    expect(validateHeader(" X-Test : value ")).toBe(false);
   });
 });
 
@@ -220,7 +222,7 @@ describe("validateHeaderName", () => {
   it("accepts digits", () => {
     expect(validateHeaderName("Content-MD5")).toBe(true);
     expect(validateHeaderName("X-B3-TraceId")).toBe(true);
-    expect(validateHeaderName("-X")).toBe(false);
+    expect(validateHeaderName("-X")).toBe(true);
   });
 });
 
@@ -619,5 +621,50 @@ describe("validateEmailAddress (issue #1)", () => {
     expect(validateEmailAddress("\"a b\"@iana.org")).toBe(true);
     expect(validateEmailAddress("\"\\\"\"@iana.org")).toBe(true);
     expect(validateEmailAddress("\"\\a\"@iana.org")).toBe(true);
+  });
+});
+
+describe("validateEmailAddress (4.1.0 follow-ups)", () => {
+  describe("local-part length", () => {
+    it("rejects a local part longer than 64 characters", () => {
+      expect(validateEmailAddress("a".repeat(64) + "@example.com")).toBe(true);
+      expect(validateEmailAddress("a".repeat(65) + "@example.com")).toBe(false);
+    });
+
+    it("counts a quoted local part with its quotes and backslashes", () => {
+      expect(validateEmailAddress("\"" + "a".repeat(62) + "\"@example.com")).toBe(true);
+      expect(validateEmailAddress("\"" + "a".repeat(63) + "\"@example.com")).toBe(false);
+      expect(validateEmailAddress("\"" + "\\a".repeat(31) + "\"@example.com")).toBe(true);
+      expect(validateEmailAddress("\"" + "\\a".repeat(32) + "\"@example.com")).toBe(false);
+    });
+
+    it("does not count * toward the limit in a wildcard pattern", () => {
+      expect(validateEmailAddress("*".repeat(10) + "a".repeat(64) + "@example.com", true)).toBe(true);
+      expect(validateEmailAddress("*" + "a".repeat(65) + "@example.com", true)).toBe(false);
+      expect(validateEmailAddress("?".repeat(65) + "@example.com", true)).toBe(false);
+    });
+  });
+
+  describe("C1 control characters", () => {
+    it("rejects U+0080 to U+009F in a dot-atom or quoted local part", () => {
+      expect(validateEmailAddress("us\u0085er@example.com")).toBe(false);
+      expect(validateEmailAddress("us\u0080er@example.com")).toBe(false);
+      expect(validateEmailAddress("us\u009fer@example.com")).toBe(false);
+      expect(validateEmailAddress("\"us\u0085er\"@example.com")).toBe(false);
+    });
+
+    it("rejects them in wildcard patterns too", () => {
+      expect(validateEmailAddress("*\u0085@example.com", true)).toBe(false);
+    });
+
+    it("still accepts the characters around the range", () => {
+      expect(validateEmailAddress("us\u00a0er@example.com")).toBe(false); // a space, as before
+      expect(validateEmailAddress("us\u00e9r@example.com")).toBe(true);
+      expect(validateEmailAddress("us~er@example.com")).toBe(true);
+    });
+
+    it("leaves hasControlCharacters unchanged", () => {
+      expect(hasControlCharacters("\u0085")).toBe(false);
+    });
   });
 });
