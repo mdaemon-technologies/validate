@@ -78,6 +78,8 @@ declare function validateLdapDN(str: string): boolean;
 
 /**
 * Validates if an email address is valid.
+* The domain part is a host name that passes validateDomain (with no trailing dot
+* and a last label that is not all digits), or an IPv4 or IPv6 address literal.
 * Supports wildcard matching if useWildCards is true.
 * Rejects any control character, including a leading or trailing CR, LF or tab.
 *

@@ -30,8 +30,22 @@ const IPV4_PREFIX = /\/(?:3[0-2]|[12]?\d)$/;
 // At most three digits, leading zeros allowed ("/064").
 const IPV6_PREFIX = /\/(?=\d{1,3}$)0*(?:12[0-8]|1[01]\d|[1-9]?\d)$/;
 
+// An email local part: a dot-atom, or a quoted string. In a quoted string, a
+// quoted pair (RFC 5321: a backslash and any printable ASCII character) lets
+// '"' and "\" appear.
+const EMAIL_LOCAL_PART = /^(?:[^<>()[\]\\.,;:\s@"]+(?:\.[^<>()[\]\\.,;:\s@"]+)*|"(?:[^"\\]|\\[\x20-\x7e])+")$/;
+// RFC 5321 allows leading zeros in an address literal's octets ("[001.2.3.4]").
+const EMAIL_IPV4_LITERAL = /^\[(?:25[0-5]|2[0-4]\d|[01]?\d?\d)(?:\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)){3}\]$/;
+// Only address characters, so validateIPv6 never sees the prefix length, zone ID
+// or surrounding whitespace that validateIPAddress accepts. validateIPv6 rejects
+// leading zeros in an embedded IPv4 part ("::ffff:001.2.3.4").
+const EMAIL_IPV6_LITERAL = /^\[IPv6:([\dA-F:.]+)\]$/i;
+const ALL_DIGITS = /^\d+$/;
+
 /**
 * Validates if an email address is valid.
+* The domain part is a host name that passes validateDomain (with no trailing dot
+* and a last label that is not all digits), or an IPv4 or IPv6 address literal.
 * Supports wildcard matching if useWildCards is true.
 * Rejects any control character, including a leading or trailing CR, LF or tab.
 *
@@ -44,8 +58,8 @@ export function validateEmailAddress(email: string, useWildCards: boolean | null
       return false;
   }
 
-  // Guard against pathological inputs before running the (backtracking-prone)
-  // regex. RFC 5321 caps an address at 254 characters.
+  // RFC 5321 caps an address at 254 characters. The check also bounds the work
+  // done on hostile input.
   if (email.length > 254) {
       return false;
   }
@@ -66,8 +80,31 @@ export function validateEmailAddress(email: string, useWildCards: boolean | null
       return domainPart.split(".").every(label => WILDCARD_DOMAIN_LABEL.test(label));
   }
 
-  const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\"[^\"\\]+\"))@((\[(25[0-5]|2[0-4]\d|[0-1]?\d?\d)(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-  return re.test(email.trim());
+  const address = email.trim();
+  // A quoted local part may contain "@", so the domain starts after the last one.
+  const at = address.lastIndexOf("@");
+  return at > 0 &&
+      EMAIL_LOCAL_PART.test(address.slice(0, at)) &&
+      isEmailDomain(address.slice(at + 1));
+}
+
+/**
+ * Checks the domain part of an email address: an IPv4 or IPv6 address literal
+ * ("[192.0.2.1]", "[IPv6:2001:db8::1]"), or a host name that follows
+ * validateDomain's label rules, has no trailing dot, and does not end in an
+ * all-numeric label (RFC 3696), so "1.2.3.4" needs its brackets.
+ */
+function isEmailDomain(domain: string): boolean {
+  const ipv6 = EMAIL_IPV6_LITERAL.exec(domain);
+  if (ipv6) {
+      return validateIPv6(ipv6[1]);
+  }
+  if (domain.startsWith("[")) {
+      return EMAIL_IPV4_LITERAL.test(domain);
+  }
+  return !domain.endsWith(".") &&
+      !ALL_DIGITS.test(domain.slice(domain.lastIndexOf(".") + 1)) &&
+      validateDomain(domain);
 }
 
 /**

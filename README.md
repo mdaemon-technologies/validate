@@ -110,12 +110,19 @@ Each label is 1-63 letters, digits and inner hyphens, and the whole name is at m
 validate.email("tommy@mdaemon.com"); // true
 validate.email("tommy.com"); // false
 validate.email("tommy@mdaemon.com\r\n"); // false (control characters are rejected)
+validate.email("tommy@-mdaemon.com"); // false (the domain must pass validate.domain)
+validate.email("tommy@example.xn--p1ai"); // true
+validate.email("tommy@[192.0.2.1]"); // true
+validate.email("tommy@[IPv6:2001:db8::1]"); // true
+validate.email('"tommy \\"t\\" smith"@mdaemon.com'); // true (quoted local part with quoted pairs)
 
 // use wild cards * or ?
 validate.email("*@mdaemon???", true); // true
 validate.email("*@*.mdaemon.com", true); // true
 validate.email("<script>@x*", true); // false
 ```
+
+The domain part is either a host name or an address literal. A host name must pass `validate.domain`, with no trailing dot and a last label that is not all digits (write `tommy@[192.0.2.1]`, not `tommy@192.0.2.1`). An address literal is an IPv4 address (`[192.0.2.1]`) or an IPv6 address tagged `IPv6:` (`[IPv6:2001:db8::1]`), with no prefix length or zone ID. In a quoted local part, a backslash escapes the next character (`"a\"b"`, `"a\\b"`), which must be printable ASCII.
 
 Addresses longer than 254 characters are rejected. So are addresses that contain a control character (U+0000–U+001F or U+007F) anywhere, including inside a quoted local part or at the start or end. Other leading and trailing whitespace (spaces, and Unicode spaces such as U+00A0) is trimmed.
 

@@ -5,6 +5,62 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0] - 2026-11-16
+
+`validateEmailAddress` (`validate.email`) now checks the domain part with
+`validateDomain`'s label rules, and accepts IPv6 address literals and quoted
+pairs in a quoted local part ([#1]). Validation output changes for some inputs
+(see *Migration notes*). There are no API or TypeScript changes, and still no
+runtime dependencies.
+
+Reported by [trackoor](https://github.com/trackoor)
+(<https://ucsbplse.github.io/>) in [#1].
+
+**Migration notes:**
+
+- **Now rejected:**
+  - a domain label that starts or ends with a hyphen (`"test@-iana.org"`,
+    `"test@iana-.com"`).
+  - a domain label longer than 63 characters.
+- **Now accepted:**
+  - a last domain label that contains digits or hyphens, such as a punycode
+    top-level domain (`"test@example.xn--p1ai"`), or is one character long
+    (`"t@a.b"`). It still can't be all digits, so `"t@1.2.3.4"` is still
+    rejected; use the address literal `"t@[1.2.3.4]"`.
+  - an IPv6 address literal (`"user@[IPv6:2001:db8::1]"`,
+    `"user@[IPv6:::ffff:192.0.2.1]"`). The `IPv6:` tag matches in any case. A
+    prefix length or zone ID (`"user@[IPv6:fe80::1%eth0]"`) is rejected.
+  - a quoted pair in a quoted local part: a backslash and a printable ASCII
+    character (`"\"a\\\"b\"@iana.org"`, `"\"a\\\\b\"@iana.org"`).
+- **Unchanged:**
+  - a trailing dot in the domain (`"t@example.com."`) and a single-label domain
+    (`"t@localhost"`) are still rejected, although `validateDomain` accepts a
+    trailing dot.
+  - an empty quoted local part (`"\"\"@iana.org"`) is still rejected.
+  - IPv4 address literals, the 254-character limit, control-character
+    rejection, trimming, and wildcard mode (`useWildCards`).
+
+### Fixed
+
+- **`validateEmailAddress`'s domain part disagreed with `validateDomain`.** It
+  accepted labels with a leading or trailing hyphen and labels over 63
+  characters, and required the last label to be two or more letters. The
+  address is now split at its last `@` (a quoted local part may contain `@`),
+  and a host-name domain must pass `validateDomain`, with no trailing dot and a
+  last label that is not all digits (RFC 3696 section 2).
+- **`validateEmailAddress` rejected IPv6 address literals.** Only IPv4 literals
+  were accepted. An `[IPv6:...]` literal (RFC 5321 section 4.1.3) is now
+  checked with `validateIPv6`, after making sure it holds only hex digits,
+  colons and dots.
+- **`validateEmailAddress` rejected quoted pairs.** A quoted local part could
+  not contain a backslash, so an escaped `"` or `\` was rejected. RFC 5321's
+  quoted pairs (`\` and a character from U+0020 to U+007E) are now accepted.
+
+### Changed
+
+- The email check no longer uses a single backtracking-prone regex. Each part
+  is checked by a linear-time pattern or by `validateDomain`.
+
 ## [4.0.1] - 2026-11-10
 
 Supports Node 18 again, and moves the build and tests to new tooling. The
@@ -492,6 +548,7 @@ See the Git history for changes prior to 3.3.5.
 
 Version 3.0.0 (2025-04-24) converted the library to TypeScript for improved type safety and developer experience. While the source code uses TypeScript and requires dev dependencies (TypeScript, Rollup, Jest, etc.) for building and testing, the published package has **zero runtime dependencies**.
 
+[4.1.0]: https://www.npmjs.com/package/@mdaemon/validate/v/4.1.0
 [4.0.1]: https://www.npmjs.com/package/@mdaemon/validate/v/4.0.1
 [4.0.0]: https://www.npmjs.com/package/@mdaemon/validate/v/4.0.0
 [3.6.0]: https://www.npmjs.com/package/@mdaemon/validate/v/3.6.0
@@ -501,3 +558,4 @@ Version 3.0.0 (2025-04-24) converted the library to TypeScript for improved type
 [3.3.6]: https://www.npmjs.com/package/@mdaemon/validate/v/3.3.6
 [3.3.5]: https://www.npmjs.com/package/@mdaemon/validate/v/3.3.5
 [3.3.0]: https://www.npmjs.com/package/@mdaemon/validate/v/3.3.0
+[#1]: https://github.com/mdaemon-technologies/validate/issues/1

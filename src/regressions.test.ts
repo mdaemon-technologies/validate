@@ -479,3 +479,145 @@ describe("review follow-ups", () => {
     expect(setPasswordRequirements([] as any)).toBe(false);
   });
 });
+
+describe("validateEmailAddress (issue #1)", () => {
+  describe("domain part uses validateDomain's label rules", () => {
+    it("rejects labels with a leading or trailing hyphen", () => {
+      expect(validateEmailAddress("test@-iana.org")).toBe(false);
+      expect(validateEmailAddress("test@iana-.com")).toBe(false);
+      expect(validateEmailAddress("test@iana.-com")).toBe(false);
+    });
+
+    it("rejects a label longer than 63 characters", () => {
+      expect(validateEmailAddress("test@" + "a".repeat(64) + ".com")).toBe(false);
+      expect(validateEmailAddress("test@" + "a".repeat(63) + ".com")).toBe(true);
+    });
+
+    it("accepts a punycode top-level domain", () => {
+      expect(validateEmailAddress("test@example.xn--p1ai")).toBe(true);
+    });
+
+    it("accepts digits and hyphens in the last label, and a one-character last label", () => {
+      expect(validateEmailAddress("test@example.a1-b")).toBe(true);
+      expect(validateEmailAddress("t@a.b")).toBe(true);
+    });
+
+    it("rejects an all-numeric last label", () => {
+      expect(validateEmailAddress("t@1.2.3.4")).toBe(false);
+      expect(validateEmailAddress("t@example.123")).toBe(false);
+    });
+
+    it("rejects a trailing dot, empty labels and a single-label domain", () => {
+      expect(validateEmailAddress("t@example.com.")).toBe(false);
+      expect(validateEmailAddress("t@example..com")).toBe(false);
+      expect(validateEmailAddress("t@.example.com")).toBe(false);
+      expect(validateEmailAddress("t@localhost")).toBe(false);
+    });
+
+    it("accepts a 252-character domain, the longest that fits in 254 characters", () => {
+      const label = "a".repeat(63);
+      const domain = [label, label, label, "b".repeat(60)].join(".");
+      expect(domain.length).toBe(252);
+      expect(validateEmailAddress("t@" + domain)).toBe(true);
+      expect(validateEmailAddress("tt@" + domain)).toBe(false);
+    });
+
+    it("splits at the last @, so a quoted local part may contain @", () => {
+      expect(validateEmailAddress("\"a@b\"@example.com")).toBe(true);
+      expect(validateEmailAddress("a@b@example.com")).toBe(false);
+    });
+  });
+
+  describe("address literals", () => {
+    it("still accepts IPv4 address literals, including leading zeros", () => {
+      expect(validateEmailAddress("user@[127.0.0.1]")).toBe(true);
+      expect(validateEmailAddress("user@[001.002.003.004]")).toBe(true);
+      expect(validateEmailAddress("user@[256.0.0.1]")).toBe(false);
+      expect(validateEmailAddress("user@[1.2.3]")).toBe(false);
+    });
+
+    it("accepts IPv6 address literals", () => {
+      expect(validateEmailAddress("user@[IPv6:::1]")).toBe(true);
+      expect(validateEmailAddress("user@[IPv6:2001:db8::1]")).toBe(true);
+      expect(validateEmailAddress("user@[IPv6:2001:db8:0:0:0:0:0:1]")).toBe(true);
+      expect(validateEmailAddress("user@[IPv6:::ffff:192.0.2.1]")).toBe(true);
+    });
+
+    it("matches the IPv6 tag in any case", () => {
+      expect(validateEmailAddress("user@[ipv6:::1]")).toBe(true);
+      expect(validateEmailAddress("user@[IPV6:::1]")).toBe(true);
+    });
+
+    it("rejects malformed IPv6 address literals", () => {
+      expect(validateEmailAddress("user@[IPv6:::1/64]")).toBe(false);
+      expect(validateEmailAddress("user@[IPv6:fe80::1%eth0]")).toBe(false);
+      expect(validateEmailAddress("user@[IPv6: ::1]")).toBe(false);
+      expect(validateEmailAddress("user@[IPv6:::1 ]")).toBe(false);
+      expect(validateEmailAddress("user@[IPv6:2001:db8::g]")).toBe(false);
+      expect(validateEmailAddress("user@[IPv6:1:2:3:4:5:6:7:8:9]")).toBe(false);
+      expect(validateEmailAddress("user@[IPv6:192.0.2.1]")).toBe(false);
+      expect(validateEmailAddress("user@[IPv6:]")).toBe(false);
+      expect(validateEmailAddress("user@[IPv6:::1")).toBe(false);
+      expect(validateEmailAddress("user@[::1]")).toBe(false);
+    });
+
+    it("rejects other address literal tags", () => {
+      expect(validateEmailAddress("user@[IPv4:192.0.2.1]")).toBe(false);
+      expect(validateEmailAddress("user@[x-tag:content]")).toBe(false);
+    });
+  });
+
+  describe("quoted local parts", () => {
+    it("accepts quoted pairs", () => {
+      expect(validateEmailAddress("\"a b\"@iana.org")).toBe(true);
+      expect(validateEmailAddress("\"\\\"\"@iana.org")).toBe(true);
+      expect(validateEmailAddress("\"\\a\"@iana.org")).toBe(true);
+      expect(validateEmailAddress("\"\\\\\"@iana.org")).toBe(true);
+      expect(validateEmailAddress("\"a\\ b\\\"c\"@iana.org")).toBe(true);
+      expect(validateEmailAddress("\"\\~\"@iana.org")).toBe(true);
+    });
+
+    it("rejects a lone backslash or an unescaped quote", () => {
+      expect(validateEmailAddress("\"\\\"@iana.org")).toBe(false);
+      expect(validateEmailAddress("\"a\\\"@iana.org")).toBe(false);
+      expect(validateEmailAddress("\"a\"b\"@iana.org")).toBe(false);
+      expect(validateEmailAddress("\"a\"\"b\"@iana.org")).toBe(false);
+    });
+
+    it("still rejects an empty quoted string", () => {
+      expect(validateEmailAddress("\"\"@iana.org")).toBe(false);
+    });
+
+    it("rejects control characters even when backslash-escaped", () => {
+      expect(validateEmailAddress("\"a\\\r\nb\"@iana.org")).toBe(false);
+      expect(validateEmailAddress("\"a\\\u0000b\"@iana.org")).toBe(false);
+      expect(validateEmailAddress("\"a\\\tb\"@iana.org")).toBe(false);
+    });
+
+    it("rejects a quoted pair that escapes a non-ASCII character", () => {
+      expect(validateEmailAddress("\"\\\u00e9\"@iana.org")).toBe(false);
+      expect(validateEmailAddress("\"\u00e9\"@iana.org")).toBe(true);
+    });
+
+    it("rejects adversarial quoted strings without catastrophic backtracking", () => {
+      const evil = "\"" + "\\a".repeat(120) + "@iana.org";
+      const start = Date.now();
+      expect(validateEmailAddress(evil)).toBe(false);
+      expect(Date.now() - start).toBeLessThan(500);
+    });
+  });
+
+  it("gives the results expected in the issue's repro", () => {
+    const long = "a".repeat(64) + ".com";
+    expect([validateDomain("-iana.org"), validateEmailAddress("test@-iana.org")]).toEqual([false, false]);
+    expect([validateDomain("iana-.com"), validateEmailAddress("test@iana-.com")]).toEqual([false, false]);
+    expect([validateDomain(long), validateEmailAddress("test@" + long)]).toEqual([false, false]);
+    expect([validateDomain("example.xn--p1ai"), validateEmailAddress("test@example.xn--p1ai")]).toEqual([true, true]);
+    expect(validateEmailAddress("user@[127.0.0.1]")).toBe(true);
+    expect(validateEmailAddress("user@[IPv6:::1]")).toBe(true);
+    expect(validateEmailAddress("user@[IPv6:2001:db8::1]")).toBe(true);
+    expect(validateEmailAddress("\"a b\"@iana.org")).toBe(true);
+    expect(validateEmailAddress("\"\\\"\"@iana.org")).toBe(true);
+    expect(validateEmailAddress("\"\\a\"@iana.org")).toBe(true);
+  });
+});
